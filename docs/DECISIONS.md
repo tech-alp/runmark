@@ -382,6 +382,11 @@ kayboluyordu. Karar:
   sonraki oturum açılışı notsuz kalan oturumu söyler.
 - Stop yolu < 100 ms (ölçülen 18 ms): ağ yok, transcript okunmaz.
 - `rmk note` execution'sız çağrılırsa not oturumun dosyasına gider.
+- SessionStart `startup|resume|clear|compact` ile eşleşir (plugin 0.4.1).
+  Ölçüldü, Claude 2.1.282 ve Codex 0.156.1: `/clear` yeni `session_id` ve yeni
+  transcript ile `source=clear` açar; `/compact` aynı oturumda `source=compact`
+  açar. Claude eski oturumu `/clear` anında `reason=clear` ile kapatır; Codex
+  kapanışı ~1 dk gecikmeyle ve her durumda `reason=other` ile gönderir.
 
 Sınırlar: hook'u hiç çalışmayan oturum bu yolla görünmez (transcript taraması
 T6 bunu kapatır). Oturum ana dizinde açılıp başka bir worktree'ye elle
