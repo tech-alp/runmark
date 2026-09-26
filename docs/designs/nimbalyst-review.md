@@ -25,6 +25,20 @@ Nimbalyst'in kendi [eğitimi](https://github.com/nimbalyst/skills/blob/main/skil
 | Extension SDK | [Resmi mimari](https://github.com/Nimbalyst/nimbalyst/blob/main/docs/EXTENSION_ARCHITECTURE.md) özel editör, panel, widget ve MCP araç katkılarını tarif ediyor. | Ayrı Runmark paneli teknik olarak mümkün görünüyor; SDK üzerinden Runmark verisini okuyup panelde gösteren uçtan uca örnek **denenmedi**. Bu, kendi Qt kokpitine karşı bakım maliyeti taşıyan bir entegrasyondur. |
 | Genel uygulama API'si | İncelenen resmi kaynaklarda Runmark verisini Tracker'a besleyecek kararlı, dışarıya açık API sözleşmesi doğrulanmadı. | **Denenmedi / doğrulanmadı.** Var olmadığı iddia edilmiyor; üzerine Faz 0b planı kurulmamalı. |
 
+### MCP burada ne demek?
+
+**MCP (Model Context Protocol), Nimbalyst içindeki ajana araç bağlama yolu.** [Nimbalyst dokümanına](https://docs.nimbalyst.com/setup-nimbalyst/mcp) göre kullanıcı bir sunucuyu uygulama veya proje düzeyinde kaydeder; araçları Claude/Codex oturumu çağırır. Runmark bugün MCP sunucusu sunmuyor ([kokpit tasarımındaki mevcut durum](runmark-cockpit.md)). İleride gerekirse küçük bir sunucu `rmk status` ve `rmk resume` sonuçlarını `runmark_status` / `runmark_resume` gibi araçlarla ajana verebilir. Bu adlar **örnek taslak**, mevcut API değil; sunucu ve bağlantı **denenmedi**.
+
+Örnek akış: Nimbalyst'te kullanıcı “Bu işte nerede kaldık?” diye sorar → ajan Runmark MCP aracını çağırır → yanıt sohbette görünür. Bu, Nimbalyst Tracker kartlarını, Kanban'ı veya bildirimleri kendiliğinden Runmark verisiyle doldurmaz. [Resmi doküman](https://docs.nimbalyst.com/setup-nimbalyst/mcp) MCP'yi ajanın dış servislere erişimi olarak tarif ediyor; panel veri kaynağı sözleşmesi olarak değil. Yalnız kokpit ekranı için MCP yazmak bu nedenle gereksiz ek iş olur.
+
+### “Panel prototipi” tam olarak ne?
+
+**Önerilen, henüz yapılmamış deneme:** Nimbalyst içine tek projelik, salt okunur bir Runmark sekmesi eklemek. [Extension Panels dokümanı](https://github.com/Nimbalyst/nimbalyst/blob/main/docs/EXTENSION_PANELS.md) extension manifestinde `placement: "fullscreen"` panelini ve `PanelHost.workspacePath` / `openFile()` bağlarını tarif ediyor. Bu doküman upstream `main` için; kurulu 0.77.5'te extension yükleme ve panel davranışı **denenmedi**.
+
+Panelin ilk sürümü yalnız mevcut Runmark verisini gösterir: dosya başına tamamlanan/toplam plan maddesi, aktif/bekleyen oturumlar, son not veya handoff ve bir gerçek bulgu (örneğin çakışma). Kaynak adayları bugün ölçülen `rmk status` JSON çıktısındaki `plans`, `sessions`, `findings` alanları ve seçilen iş için `rmk resume <exec>` çıktısıdır. **Kritik ilk adım:** Nimbalyst extension'ının proje yolunda Runmark CLI çıktısına desteklenen bir yöntemle erişip erişemediğini doğrulamak. Panel dokümanındaki `PanelHost` arayüzü bir CLI çalıştırma metodu göstermiyor; doğrudan süreç başlatabildiği varsayılmamalı. Gerekirse ayrı bir yerel, salt okunur veri köprüsünün maliyeti ölçülür; prototipten önce kalıcı servis veya yeni Runmark API'si tasarlanmaz.
+
+**Geçme ölçütü:** Bir gerçek projede panelin N/M sayıları `rmk status` ile birebir tutar; oturum durumu ve bulgu güncellemeden sonra yenilenir; plan dosyasına gidilebilir; plan, tracker ve Runmark kayıtları panel tarafından değiştirilmez. CLI verisine güvenli erişim için gereken kod ve bakım yükü de kaydedilir. Bunlar sağlanmadan “Nimbalyst Runmark kokpitidir” denmez. Prototip çok projeli liste, görev düzenleme, ajan başlatma veya yeni bildirim üretmez; bunlar RM-16 yön kararı sonrasının kapsamıdır.
+
 ## 3. Runmark kokpit ihtiyaçlarıyla örtüşme
 
 | [Kokpit ihtiyacı](runmark-cockpit.md) | Nimbalyst bulgusu | Değerlendirme |
