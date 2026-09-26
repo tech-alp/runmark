@@ -530,6 +530,10 @@ void sessionContract(const QString& executable)
     check(session("s1").value("state") == "waiting", "a finished reply means the agent waits");
 
     commit("work one");
+    // /compact re-runs session start in the same session (measured, Claude
+    // Code 2.1.282): context again, and the baseline stays the first start's,
+    // so the commit above is still asked about.
+    check(!hook(executable, root, "session-start", input("s1", R"(,"source":"compact")")).isEmpty(), "compact hands the context again");
     qint64 elapsed = 0;
     const QByteArray block = hook(executable, root, "stop", input("s1"), 0, &elapsed);
     const QJsonObject decision = QJsonDocument::fromJson(block).object();

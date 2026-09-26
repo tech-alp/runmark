@@ -67,7 +67,8 @@ check('four session hooks and manifest contracts', () => {
     // Stop and prompt-submit run on every turn: keep them short.
     assert(hook[0].timeout <= (name === 'SessionStart' ? 10 : 5), `${name} timeout`);
   }
-  assert.equal(hooks.SessionStart[0].matcher, 'startup|resume');
+  // /clear starts a new session, /compact drops the context: both need it again.
+  assert.equal(hooks.SessionStart[0].matcher, 'startup|resume|clear|compact');
   const entry = path.join(plugin, 'hooks/runmark-hook.sh');
   const wrapper = fs.readFileSync(entry, 'utf8');
   assert(wrapper.startsWith('#!/bin/sh\n'), 'shebang');
