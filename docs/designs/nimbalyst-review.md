@@ -1,0 +1,44 @@
+# RM-15 — Nimbalyst incelemesi (Faz 0b öncesi)
+
+Tarih: 2026-09-26. Karar sahibi: kullanıcı. Bu rapor [Runmark kokpit tasarımındaki](runmark-cockpit.md) Faz 0b kararına girdi sağlar.
+
+## Ölçüm sınırı
+
+- Yerelde kurulu Nimbalyst **0.77.5** açıldı. Geçici `/private/tmp/rm15-nimbalyst-fixture` projesine `task_plan.md`, `docs/plans/migration.md` ve `plans/sample.md` kondu. Her dosyada bir `- [x]`, bir `- [ ]` satırı vardı. AI oturumu açılmadı; MCP sunucusu bağlanmadı.
+- Resmi [README](https://github.com/Nimbalyst/nimbalyst/blob/main/README.md), [Quickstart](https://docs.nimbalyst.com/getting-started/quickstart), [MCP dokümanı](https://docs.nimbalyst.com/setup-nimbalyst/mcp), [extension mimarisi](https://github.com/Nimbalyst/nimbalyst/blob/main/docs/EXTENSION_ARCHITECTURE.md) ve [0.78.5 sürüm notu](https://github.com/Nimbalyst/nimbalyst/releases/tag/v0.78.5) incelendi. **0.78.5 kurulup denenmedi**; yerel sonuçlar yalnız 0.77.5 içindir.
+- Geçici projenin dışında Runmark planlarının gerçek Nimbalyst projesinde taranması, canlı Claude/Codex oturumu takibi, MCP ile Runmark bağlantısı, extension SDK ile panel yapımı ve Nimbalyst API'sine veri yazma **denenmedi**.
+
+## 1. İş akışı dosyalarını okuyor mu?
+
+**Dosya olarak evet; otomatik plan ilerlemesi olarak gözlenmedi.** Yerel denemede `task_plan.md` dosyası Files görünümünde açıldı; `- [ ] Build parser` işaretsiz, `- [x] Draft design` işaretli checkbox olarak göründü. İç içe `docs/plans/migration.md` de dosya ağacında erişilebilirdi. Bu, [Quickstart'ın](https://docs.nimbalyst.com/getting-started/quickstart) standart Markdown dosyalarını açma vaadiyle uyumlu.
+
+Aynı projede Tracker görünümü **`0 open of 0`**, **`Plans 0`**, **`Tasks 0`** gösterdi. `Import > Import from plans/` komutu, `plans/sample.md` içindeki sade checkbox listesi için **`No items found`** döndürdü. `docs/plans/` için doğrudan içe aktarma seçeneği görülmedi. Bu ölçüm, sade `- [ ]` satırlarının Tracker kartına veya dosya başına N/M sayısına kendiliğinden dönüşmediğini gösterir; bütün olası içe aktarma biçimlerini dışlamaz.
+
+Nimbalyst'in kendi [eğitimi](https://github.com/nimbalyst/skills/blob/main/skills/getting-started/tutorial.md), Markdown planını belge olarak açıp ayrıca agent ile tracker öğelerine dönüştürmeyi tarif ediyor. Bu adım otomatik, kaynak dosyaya bağlı, deterministik ilerleme okuyucusu yerine geçmez. Nimbalyst'in [tracker öğeleri](https://github.com/Nimbalyst/nimbalyst/blob/main/docs/THE_HARNESS.md) plan, karar ve görev türlerini destekler; Runmark'ın çeşitli araçların mevcut checklist dosyalarını aynen sayma şartı başka bir iştir.
+
+## 2. Dışarıdan kaynak bağlanabiliyor mu?
+
+| Yol | Kanıt | Runmark açısından sınır |
+|---|---|---|
+| Proje dosyaları | Yerel fixture açıldı; [Quickstart](https://docs.nimbalyst.com/getting-started/quickstart) proje klasöründeki standart dosyaları tarif ediyor. | Runmark Markdown dosyası açılabilir. Dosyadaki checkbox'ların Tracker veya kokpit verisine otomatik alınması ölçülmedi; sade listede alınmadı. |
+| MCP istemcisi | [Resmi MCP dokümanı](https://docs.nimbalyst.com/setup-nimbalyst/mcp) uygulama/proje düzeyinde özel sunucu eklemeyi ve araçların ajana sunulmasını açıklıyor. | Runmark MCP sunucusu geliştirilirse **ajan** sorgulayabilir. MCP sonucunun Nimbalyst'in yerleşik Tracker/Kanban ekranına veri kaynağı olması belgelenmedi ve denenmedi. |
+| Extension SDK | [Resmi mimari](https://github.com/Nimbalyst/nimbalyst/blob/main/docs/EXTENSION_ARCHITECTURE.md) özel editör, panel, widget ve MCP araç katkılarını tarif ediyor. | Ayrı Runmark paneli teknik olarak mümkün görünüyor; SDK üzerinden Runmark verisini okuyup panelde gösteren uçtan uca örnek **denenmedi**. Bu, kendi Qt kokpitine karşı bakım maliyeti taşıyan bir entegrasyondur. |
+| Genel uygulama API'si | İncelenen resmi kaynaklarda Runmark verisini Tracker'a besleyecek kararlı, dışarıya açık API sözleşmesi doğrulanmadı. | **Denenmedi / doğrulanmadı.** Var olmadığı iddia edilmiyor; üzerine Faz 0b planı kurulmamalı. |
+
+## 3. Runmark kokpit ihtiyaçlarıyla örtüşme
+
+| [Kokpit ihtiyacı](runmark-cockpit.md) | Nimbalyst bulgusu | Değerlendirme |
+|---|---|---|
+| Paralel Claude/Codex oturumları, iş ağaçları, Kanban | [README](https://github.com/Nimbalyst/nimbalyst/blob/main/README.md) ve [Quickstart](https://docs.nimbalyst.com/getting-started/quickstart) bunları tarif ediyor; yerel uygulamada Agent/Tracker/Files sekmeleri görüldü. | **Güçlü örtüşme**; canlı Runmark oturumuyla denenmedi. |
+| Terminalde Nimbalyst dışında açılan oturumlar | [0.78.5 sürüm notu](https://github.com/Nimbalyst/nimbalyst/releases/tag/v0.78.5) harici Claude/Codex CLI oturumlarını canlı izlemeyi **alpha** olarak duyuruyor. | **Kısmi**; kurulu 0.77.5'te ve Runmark hook oturumlarıyla denenmedi. |
+| “Ajan senden yanıt bekliyor” bildirimi ve kurtarma | [Quickstart](https://docs.nimbalyst.com/getting-started/quickstart) mobil dashboard, bekleyen onay bildirimi ve devam ettirmeyi; [bildirim dokümanı](https://docs.nimbalyst.com/setup-nimbalyst/ai-provider-setup-and-notifications) masaüstü yanıt bildirimini anlatıyor. | **Kısmi/güçlü**; gerçek bildirim ve Runmark'ın kayıp worktree/eski base kurtarması denenmedi. |
+| Çok projeli tek görünüm | [Quickstart](https://docs.nimbalyst.com/getting-started/quickstart) birden fazla proje penceresini destekliyor. | **Kısmi**; tek birleşik N/M + oturum + not panosu doğrulanmadı. |
+| Farklı araçların `- [ ]` planlarından dosya başına N/M | Yerel denemede checkbox görüntülendi; Tracker `0 open of 0` kaldı ve sade `plans/` içe aktarımı `No items found` verdi. | **Boşluk**. |
+| `rmk note`, handoff, doğrulanmış kanıt ve çakışma radarı | Nimbalyst [tracker kararlarını](https://github.com/Nimbalyst/nimbalyst/blob/main/docs/THE_HARNESS.md) ve oturum bağlantılarını destekliyor; [README](https://github.com/Nimbalyst/nimbalyst/blob/main/README.md) diff/commit incelemesini anlatıyor. | **Runmark semantiği ölçülmedi**: notsuz kapanış, eski base, dosya/görev çakışması ve ölçülen kanıtın aynı kurallarla gösterimi için bağ gerekir. |
+| Planlara salt okunur bakış, tek yazar | [Quickstart](https://docs.nimbalyst.com/getting-started/quickstart) dosyaların uygulama içinde düzenlenip otomatik kaydedildiğini anlatıyor; yerel Files görünümü de editör açtı. | **Tasarım gerilimi**: Runmark paneli salt okunur olmalı; Nimbalyst'in normal editöründe aynı dosyayı elle düzenlemek iki yazar riskini taşır. |
+
+## Öneri
+
+**Runmark kendi süreklilik motoru olarak kalsın; Nimbalyst'i Faz 0b için tercih edilen görüntüleyici adayı yapın.** Oturum/Kanban/bildirim/worktree arayüzünü tekrar yazmanın getirisi düşük. Runmark'ın farkı, mevcut plan dosyalarını deterministik sayması, oturum devri, not ve çakışma kanıtını üretmesi. Tracker'a kopya görev yazıp ikinci bir kaynak oluşturmak yerine önce **salt okunur, tek projelik Runmark paneli** için Nimbalyst extension SDK ile dar bir prototip ölçülmeli. MCP yalnız ajan erişimi sağladığı için pano entegrasyonunun kanıtı sayılmamalı. Prototip mevcut N/M, aktif oturum, son not ve bir çakışma uyarısını dosyaları değiştirmeden gösterirse RM-16 Nimbalyst entegrasyonuna döner; bu mümkün değilse Runmark'ın ince Qt kokpiti yapılır. Bu bir öneridir, yön kararı kullanıcıdadır.
+
+**Açık karar:** RM-16'nın hedefi Nimbalyst paneli mi, Runmark'ın kendi ince çok projeli Qt kokpiti mi? Dar panel prototipinin maliyeti ve harici oturumların gerçek yakalanması görülmeden kesinleştirilmedi.
