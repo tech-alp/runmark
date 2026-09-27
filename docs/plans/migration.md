@@ -125,6 +125,8 @@ Format `project.json` içindeki `task_id_pattern` ile eşleşmezse `rmk status`
     görünmüyordu. Artık `## Open work` listesi var (ADR-024).
   - [x] #3 `interrupted` iş devam ettirilemiyordu (`rmk start` iki yoldan da
     reddediyordu). Artık `rmk start` onu devralıyor (ADR-024).
+  - [ ] #4 Kapanmış bir execution'ın dalına `finish`'ten sonra gelen commit
+    görünmüyor: RM-15'te `5e2714f` handoff'ta ve resume'da yok.
 
 - [ ] RM-15 — Faz 0b öncesi: Nimbalyst incelemesi
 

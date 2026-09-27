@@ -56,3 +56,26 @@ Panelin ilk sürümü yalnız mevcut Runmark verisini gösterir: dosya başına 
 **Runmark kendi süreklilik motoru olarak kalsın; Nimbalyst'i Faz 0b için tercih edilen görüntüleyici adayı yapın.** Oturum/Kanban/bildirim/worktree arayüzünü tekrar yazmanın getirisi düşük. Runmark'ın farkı, mevcut plan dosyalarını deterministik sayması, oturum devri, not ve çakışma kanıtını üretmesi. Tracker'a kopya görev yazıp ikinci bir kaynak oluşturmak yerine önce **salt okunur, tek projelik Runmark paneli** için Nimbalyst extension SDK ile dar bir prototip ölçülmeli. MCP yalnız ajan erişimi sağladığı için pano entegrasyonunun kanıtı sayılmamalı. Prototip mevcut N/M, aktif oturum, son not ve bir çakışma uyarısını dosyaları değiştirmeden gösterirse RM-16 Nimbalyst entegrasyonuna döner; bu mümkün değilse Runmark'ın ince Qt kokpiti yapılır. Bu bir öneridir, yön kararı kullanıcıdadır.
 
 **Açık karar:** RM-16'nın hedefi Nimbalyst paneli mi, Runmark'ın kendi ince çok projeli Qt kokpiti mi? Dar panel prototipinin maliyeti ve harici oturumların gerçek yakalanması görülmeden kesinleştirilmedi.
+
+## İnceleme (2026-09-27)
+
+Ölçüm kısmı sağlam; öneri kanıtın önüne geçiyor. Önerilen panel prototipi RM-16'yı belirleyecek soruları test etmiyor.
+
+1. **Önceden yazılan ölçüt değişti.** [Kokpit tasarımı](runmark-cockpit.md) "iş akışı dosyalarını okumuyor ve dışarıdan kaynak bağlanabiliyorsa (MCP ya da dosya) Runmark motor olur" diyordu. Bu rapora göre MCP yalnız ajanı besliyor, ekranı beslemiyor; ikinci şart bugün karşılanmıyor. Ölçüte göre varsayılan sonuç kendi kokpitimiz. Extension paneli yeni bir ölçüt; Nimbalyst'i "tercih edilen aday" yapmak için henüz kanıt yok.
+2. **Prototip geçse de 0b kanıtlanmaz.** 0b bitti ölçütü çok projeli görünüm, kurtarma düğmeleri ve "ajan bekliyor" bildirimi istiyor. Prototip tek projelik, salt okunur ve düğmesiz; zor kısımlar kapsam dışında.
+3. **"Yeniden yazmayalım" gerekçesi denenmemiş özelliğe dayanıyor.** Nimbalyst'in oturum, Kanban ve bildirimleri kendi içinde açılan oturumlar için. Kullanıcı ajanları terminalde (cmux) çalıştırıyor; harici oturum izleme 0.78.5'te alpha ve denenmedi. Kokpit tasarımı bu özellikleri zaten "emtia" sayıyor.
+4. **İki kısıt atlandı.** ADR-022 gereği Runmark üçüncü taraf araç kurulu olmadan çalışır; Nimbalyst en fazla isteğe bağlı görüntüleyici olabilir, Runmark'ın kendi görünümü her durumda gerekir. Karşılaştırma Qt kokpitini sıfırdan sayıyor; oysa `apps/desktop` ve `libs/ui-shell` findings görünümü var ve `rmk status` bugün `plans`, `sessions`, `findings` alanlarını veriyor.
+5. **Veri köprüsü daha basit olabilir.** [Extension mimarisi](https://github.com/Nimbalyst/nimbalyst/blob/main/docs/EXTENSION_ARCHITECTURE.md) masaüstünde `permissions.filesystem` ile dosya okumayı tarif ediyor; süreç başlatma yok. En ucuz köprü: Runmark'ın her olayda çalışan hook'larla `.runmark/` altına yazdığı bir durum dosyasını panelin okuması; kurallar C++'ta kalır. Upstream `main` belgesi; 0.77.5'te doğrulanmadı. Belgede API kararlılığı taahhüdü yok; tek kullanıcılı araç için bakım riski.
+
+Raporun doğru tespitleri: MCP'nin pano entegrasyonu için gereksiz olduğu, iki yazar riski ve "denenmedi" işaretleri.
+
+### RM-16 için eksik kanıt (öncelik sırasıyla)
+
+1. **Kullanım:** Kullanıcı Nimbalyst'i gün boyu cmux yerine ya da yanında açık tutar mı? Hayırsa diğerleri önemsiz.
+2. **Harici oturum:** 0.78.5, runmark projesinde terminalden açılan gerçek bir Claude ve bir Codex oturumunu izliyor mu? (~30 dk)
+3. **Çok proje:** Tek pencerede birden fazla proje görünür mü? (0b'nin ilk ölçütü)
+4. **Yazma eylemi:** Panel bir komut tetikleyebilir mi? Tetikleyemiyorsa kurtarma düğmeleri Nimbalyst'te yapılamaz.
+5. **Extension denemesi:** Kurulu sürümde bir JSON dosyasını okuyup gösteren en küçük panel. (1–2 saat)
+6. **Karşılaştırma tabanı:** Mevcut Qt desktop bugün neyi gösteriyor, 0b ölçütüne ne kadar iş kalıyor?
+
+**Yol:** Önce 1 ve 2 (ucuz). Biri "hayır" ise RM-16 mevcut Qt desktop üzerinde ince kokpit olur; Nimbalyst sonraya isteğe bağlı görüntüleyici olarak kalır. İkisi de "evet" ise 3–5 denenir.
