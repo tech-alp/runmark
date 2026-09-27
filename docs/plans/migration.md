@@ -155,3 +155,7 @@ Format `project.json` içindeki `task_id_pattern` ile eşleşmezse `rmk status`
   3. Eylemler: nerede kaldık, devam et, tüm projeler.
   4. Çözümü komut olan uyarılar eyleme bağlanır.
   5. Bir hafta kullanım; Qt desktop kararı.
+
+  Kapsam dışı (kullanıcı kararı, 2026-09-27): makineler arası devam. Notlar,
+  açık işler, oturumlar ve handoff'lar makineye yerel; yalnız
+  `.runmark/project.json` git'le taşınır. Sonraki sürüm adayı.
