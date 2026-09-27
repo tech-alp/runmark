@@ -173,6 +173,7 @@ SessionFacts parseSession(const QString& path)
             session.source = text(o, "source");
         } else if (type == QLatin1String("session.working")) {
             session.lastWorkingAt = parseTime(o);
+            session.turnHead = text(o, "head");
         } else if (type == QLatin1String("session.waiting")) {
             session.lastWaitingAt = parseTime(o);
         } else if (type == QLatin1String("session.reminded")) {
@@ -275,9 +276,9 @@ void recordSessionStarted(const Paths& paths, const SessionFacts& session)
         {QStringLiteral("head"), orNull(session.startHead)}});
 }
 
-void recordSessionWorking(const Paths& paths, const QString& id)
+void recordSessionWorking(const Paths& paths, const QString& id, const QString& head)
 {
-    sessionEvent(paths, id, QStringLiteral("session.working"));
+    sessionEvent(paths, id, QStringLiteral("session.working"), {{QStringLiteral("head"), orNull(head)}});
 }
 
 void recordSessionWaiting(const Paths& paths, const QString& id)

@@ -30,7 +30,7 @@ ResumeFacts observeResumeLedger(const Paths& paths, const QString& taskOrExecuti
 // writer per session). A note whose exec is empty goes to its session's file.
 bool isSafeSessionId(const QString& id);
 void recordSessionStarted(const Paths& paths, const SessionFacts& session);
-void recordSessionWorking(const Paths& paths, const QString& id);
+void recordSessionWorking(const Paths& paths, const QString& id, const QString& head);
 void recordSessionWaiting(const Paths& paths, const QString& id);
 void recordSessionReminded(const Paths& paths, const QString& id, const QString& head);
 void recordSessionEnded(const Paths& paths, const QString& id, const QString& reason);

@@ -425,11 +425,22 @@ QVector<Finding> evaluate(const ProjectConfig& config, const StatusFacts& facts)
                 if (b.changedFiles.contains(file)) shared.append(file.section(QStringLiteral("//"), 1));
             }
             if (shared.isEmpty()) continue;
+            const QString pair = a.id + QStringLiteral(" (") + a.runtime + QStringLiteral(") and ") + b.id + QStringLiteral(" (") + b.runtime + QStringLiteral(")");
+            const QString list = QStringList(shared.mid(0, 3)).join(QStringLiteral(", "))
+                + (shared.size() > 3 ? QStringLiteral(" and %1 more").arg(shared.size() - 3) : QString());
+            // In one checkout the changes cannot be attributed to either
+            // session; claiming both touched them was wrong (RM-14 #5).
+            if (!a.cwd.isEmpty() && a.cwd == b.cwd) {
+                findings.append(finding(QStringLiteral("context.session_conflict"), QStringLiteral("warning"), QStringLiteral("context"),
+                    QStringLiteral("Two live agent sessions share one checkout"),
+                    pair + QStringLiteral(" share the checkout ") + a.cwd + QStringLiteral(", which has changes in ") + list
+                        + QStringLiteral("; which session made them cannot be told"),
+                    QStringLiteral("Give one of them its own worktree with rmk start, or end the idle one.")));
+                continue;
+            }
             findings.append(finding(QStringLiteral("context.session_conflict"), QStringLiteral("warning"), QStringLiteral("context"),
                 QStringLiteral("Two live agent sessions touch the same work"),
-                a.id + QStringLiteral(" (") + a.runtime + QStringLiteral(") and ") + b.id + QStringLiteral(" (") + b.runtime
-                    + QStringLiteral(") both touch ") + QStringList(shared.mid(0, 3)).join(QStringLiteral(", "))
-                    + (shared.size() > 3 ? QStringLiteral(" and %1 more").arg(shared.size() - 3) : QString()),
+                pair + QStringLiteral(" both touch ") + list,
                 QStringLiteral("Stop one of them or split the work before both finish.")));
         }
     }

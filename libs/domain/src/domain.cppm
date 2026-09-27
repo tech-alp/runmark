@@ -178,6 +178,10 @@ struct SessionFacts {
     QString source;            // startup | resume | ...
     QDateTime startedAt;
     QString startHead;         // HEAD of cwd when it started; empty outside git
+    // HEAD of cwd when the latest prompt arrived; empty in older records.
+    // Commits before it landed while this session waited, so they are
+    // another session's in a shared checkout.
+    QString turnHead;
     QDateTime lastWorkingAt;   // the user sent a prompt; the agent is working
     QDateTime lastWaitingAt;   // the agent finished a reply and waits for the user
     std::optional<QDateTime> endedAt;

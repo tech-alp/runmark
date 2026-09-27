@@ -579,6 +579,25 @@ void sessionContract(const QString& executable)
     check(!hasFinding(status(), "context.session_conflict"), "no shared change, no conflict");
     check(writeFile(root + "/shared.txt", "v2\n"), "edit shared file");
     check(hasFinding(status(), "context.session_conflict"), "two live sessions changing one file conflict");
+    {
+        QString explanation;
+        for (const QJsonValue& value : status().value("findings").toArray()) {
+            if (value.toObject().value("id") == "context.session_conflict") explanation = value.toObject().value("explanation").toString();
+        }
+        check(explanation.contains("share the checkout") && !explanation.contains("both touch"),
+            "one checkout cannot tell whose change it is (RM-14 #5)");
+    }
+    // A commit that lands while a session waits is another session's: r1's
+    // next turn starts after it, so r1 is not asked about it (RM-14 #5).
+    hook(executable, root, "prompt-submit", input("r1"));
+    hook(executable, root, "stop", input("r1"));
+    hook(executable, root, "prompt-submit", input("r2"));
+    check(writeFile(root + "/shared.txt", "v2\n"), "r2 edits");
+    git({"add", "shared.txt"});
+    commit("r2 work");
+    check(!hook(executable, root, "stop", input("r2")).isEmpty(), "the committing session is asked for a note");
+    hook(executable, root, "prompt-submit", input("r1"));
+    check(hook(executable, root, "stop", input("r1")).isEmpty(), "a session that waited through another's commit is not");
     hook(executable, root, "session-end", input("r2", R"(,"reason":"other")"));
     check(!hasFinding(status(), "context.session_conflict"), "an ended session no longer conflicts");
 

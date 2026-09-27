@@ -518,7 +518,7 @@ SessionStartResult sessionStarted(const QString& configPath, const HookInput& in
 
 void sessionWorking(const QString& configPath, const HookInput& input)
 {
-    recordSessionWorking(pathsFor(configPath), input.sessionId);
+    recordSessionWorking(pathsFor(configPath), input.sessionId, headOf(input.cwd));
 }
 
 std::optional<QString> sessionStopped(const QString& configPath, const HookInput& input)
@@ -533,7 +533,7 @@ std::optional<QString> sessionStopped(const QString& configPath, const HookInput
 
     // Where this session's commits land: its own directory and the worktrees
     // of executions it started, each against its baseline.
-    QVector<QPair<QString, QString>> places{{session->cwd, session->startHead}};
+    QVector<QPair<QString, QString>> places{{session->cwd, session->turnHead.isEmpty() ? session->startHead : session->turnHead}};
     const Ledger ledger = readLedger(paths);
     for (const ExecutionStarted& started : ledger.started) {
         if (started.sessionId == session->id) places.append({started.worktree, started.headSha});

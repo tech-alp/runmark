@@ -127,10 +127,11 @@ Format `project.json` içindeki `task_id_pattern` ile eşleşmezse `rmk status`
     reddediyordu). Artık `rmk start` onu devralıyor (ADR-024).
   - [ ] #4 Kapanmış bir execution'ın dalına `finish`'ten sonra gelen commit
     görünmüyor: RM-15'te `5e2714f` handoff'ta ve resume'da yok.
-  - [ ] #5 Paylaşılan checkout'ta commit hatırlatması commit'i atan oturuma
+  - [x] #5 Paylaşılan checkout'ta commit hatırlatması commit'i atan oturuma
     değil klasördeki her canlı oturuma gidiyor; çakışma radarı da kirli
     dosyaları hepsine yazıyor. Codex oturumu Claude'un commit'leri için not
-    yazdı (2026-09-27).
+    yazdı (2026-09-27). Düzeldi: hatırlatmanın tabanı son prompt anındaki
+    HEAD; radar aynı checkout için "paylaşıyor" der, dosyayı kimseye yazmaz.
 
 - [x] RM-15 — Faz 0b öncesi: Nimbalyst incelemesi
 

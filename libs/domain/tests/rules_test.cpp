@@ -363,6 +363,13 @@ int main()
         for (const runmark::Finding& finding : findings) {
             if (finding.id == QLatin1String("context.session_conflict") && !finding.explanation.contains(QStringLiteral("libs/domain/src/rules.cpp"))) return 1;
         }
+        // One checkout: the changes cannot be attributed to either session.
+        f.sessions[0].cwd = f.sessions[1].cwd = QStringLiteral("/repo");
+        for (const runmark::Finding& finding : runmark::evaluate(config(), f)) {
+            if (finding.id == QLatin1String("context.session_conflict") && !finding.explanation.contains(QStringLiteral("share the checkout /repo"))) return 1;
+        }
+        f.sessions[0].cwd.clear();
+        f.sessions[1].cwd.clear();
         // Same name in another repository is not the same file.
         f.sessions[1].changedFiles = {QStringLiteral("/other/.git//libs/domain/src/rules.cpp")};
         if (has(runmark::evaluate(config(), f), QStringLiteral("context.session_conflict"))) return 1;
