@@ -127,6 +127,10 @@ Format `project.json` içindeki `task_id_pattern` ile eşleşmezse `rmk status`
     reddediyordu). Artık `rmk start` onu devralıyor (ADR-024).
   - [ ] #4 Kapanmış bir execution'ın dalına `finish`'ten sonra gelen commit
     görünmüyor: RM-15'te `5e2714f` handoff'ta ve resume'da yok.
+  - [ ] #5 Paylaşılan checkout'ta commit hatırlatması commit'i atan oturuma
+    değil klasördeki her canlı oturuma gidiyor; çakışma radarı da kirli
+    dosyaları hepsine yazıyor. Codex oturumu Claude'un commit'leri için not
+    yazdı (2026-09-27).
 
 - [x] RM-15 — Faz 0b öncesi: Nimbalyst incelemesi
 
@@ -149,8 +153,10 @@ Format `project.json` içindeki `task_id_pattern` ile eşleşmezse `rmk status`
      - herdr pane'lerinde `HERDR_WORKSPACE_ID`, `HERDR_BIN_PATH`,
        `HERDR_SOCKET_PATH` var; içindeki ajanın Runmark hook'u çalışma
        alanını bilir. Runmark hook'ları herdr içinde oturumu kaydetti.
-  1. Motor: `rmk init` (bugün yalnız desktop kurabiliyor), `rmk status
-     --summary` ve açık işlerin JSON listesi.
+  1. [x] Motor: `rmk init` (yeni projeyi kurar, var olanı yalnız
+     `~/.config/runmark/projects.json`'a kaydeder), `rmk status --line`
+     (`17/48 · 3 warn`; plan denetim bulguları sayılmaz) ve `status`
+     JSON'unda `open_work`.
   2. Kenar çubuğu: açılışta ve olaylarda proje özeti.
   3. Eylemler: nerede kaldık, devam et, tüm projeler.
   4. Çözümü komut olan uyarılar eyleme bağlanır.

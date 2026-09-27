@@ -658,6 +658,10 @@ void continuationContract(const QString& executable)
     cli({"finish", first.value("exec").toString(), "--outcome", "interrupted"});
     const QJsonObject paused = cli({"status"});
     check(hasFinding(paused, "context.interrupted_execution"), "an interrupted execution waits to be continued");
+    const QJsonArray openWork = paused.value("open_work").toArray();
+    check(openWork.size() == 1 && openWork.at(0).toObject().value("task") == "MF-1"
+        && openWork.at(0).toObject().value("outcome") == "interrupted"
+        && openWork.at(0).toObject().value("worktree") == worktree, "status lists open work for the plugin");
     check(!hasFinding(paused, "git.orphaned_worktree"), "its worktree is the work, not left behind");
 
     QThread::sleep(1);  // execution IDs have one-second resolution
@@ -665,6 +669,11 @@ void continuationContract(const QString& executable)
     const QByteArray context = hook(executable, project, "session-start", R"({"session_id":"c1","cwd":")" + project.toUtf8() + R"("})");
     check(context.startsWith("## Open work") && context.contains("- MF-1: " + first.value("exec").toString().toUtf8() + " interrupted")
         && !context.contains("- MF-2:"), "session start lists open work besides the resumed execution");
+    {
+        QByteArray line, error;
+        check(run(executable, {"--project", project + "/.runmark/project.json", "status", "--line"}, 0, &line, &error)
+            && line == "0/2 · 2 open · 1 warn\n", "one short line for a sidebar (the untracked plan leaves the checkout dirty)");
+    }
     QByteArray refusal;
     cli({"start", "MF-2"}, 1, &refusal);
     check(refusal.contains("rmk resume " + second.toUtf8()), "a still-open task is pointed at, not restarted");
@@ -682,6 +691,40 @@ void continuationContract(const QString& executable)
     check(recreated.value("workspace_source") == "adopted" && git({"-C", worktree, "log", "--format=%s"}).contains("half done"),
         "a removed worktree is recreated from the interrupted branch");
     QTextStream(stdout) << "continuation contract: interrupted continue, open refusal, open work listing passed\n";
+}
+
+// rmk init: a new project from the terminal, registered for discovery; an
+// existing one is only registered, never rewritten.
+void initContract(const QString& executable)
+{
+    QTemporaryDir fixture;
+    check(fixture.isValid(), "init fixture");
+    const QString root = QFileInfo(fixture.path()).canonicalFilePath();
+    const QString project = root + "/notes-api";
+    const auto git = [](const QStringList& args) {
+        QByteArray out, err;
+        check(run(QStringLiteral("git"), args, 0, &out, &err), "init git command");
+    };
+    git({"init", "--bare", root + "/remote.git"});
+    git({"init", "-b", "main", project});
+    git({"-C", project, "remote", "add", "origin", root + "/remote.git"});
+    qputenv("RUNMARK_CONFIG_HOME", (root + "/config").toUtf8());
+    const auto registered = [&] {
+        return QJsonDocument::fromJson(readFile(root + "/config/projects.json")).object().value("projects").toArray();
+    };
+
+    QByteArray output;
+    check(runIn(executable, {"init"}, project, &output) == 2, "a new project needs a task prefix");
+    check(runIn(executable, {"init", "--prefix", "NA"}, project, &output) == 0
+        && QJsonDocument::fromJson(output).object().value("created") == true, "init creates a project");
+    check(QFile::exists(project + "/PLAN.md") && QFile::exists(project + "/.runmark/project.json"), "init creates the plan and config");
+    check(registered() == QJsonArray{project + "/.runmark/project.json"}, "init registers the project");
+    const QByteArray config = readFile(project + "/.runmark/project.json");
+    check(runIn(executable, {"init", "--prefix", "XX"}, project, &output) == 0
+        && QJsonDocument::fromJson(output).object().value("created") == false, "init on an existing project only registers");
+    check(readFile(project + "/.runmark/project.json") == config && registered().size() == 1, "an existing project is never rewritten or listed twice");
+    qunsetenv("RUNMARK_CONFIG_HOME");
+    QTextStream(stdout) << "init contract: create, register, idempotent passed\n";
 }
 
 int main(int argc, char* argv[])
@@ -720,6 +763,7 @@ int main(int argc, char* argv[])
         discoveryContract(executable);
         sessionContract(executable);
         continuationContract(executable);
+        initContract(executable);
     } catch (const std::exception& error) {
         QTextStream(stderr) << error.what() << '\n';
         return 1;

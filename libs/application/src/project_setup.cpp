@@ -9,6 +9,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSaveFile>
 #include <QRegularExpression>
 
 namespace runmark {
@@ -27,10 +28,15 @@ QString configUnder(QString directory)
 }
 
 // ~/.config/runmark/projects.json: {"projects": ["/abs/.runmark/project.json", ...]}
-QStringList listedProjects()
+QString registryPath()
 {
     const QString home = qEnvironmentVariable("RUNMARK_CONFIG_HOME", QDir::home().filePath(QStringLiteral(".config/runmark")));
-    QFile file(QDir(home).filePath(QStringLiteral("projects.json")));
+    return QDir(home).filePath(QStringLiteral("projects.json"));
+}
+
+QStringList listedProjects()
+{
+    QFile file(registryPath());
     if (!file.open(QIODevice::ReadOnly)) return {};
     QStringList projects;
     for (const QJsonValue& value : QJsonDocument::fromJson(file.readAll()).object().value(QStringLiteral("projects")).toArray()) {
@@ -100,6 +106,22 @@ QString initializeProject(const QString& folder, const QString& name, const QStr
         config.instructions.append(QStringLiteral("AGENTS.md"));
     const QString path = QDir(root).filePath(".runmark/project.json");
     createProjectConfig(path, config);
+    registerProject(path);
     return path;
+}
+
+void registerProject(const QString& configPath)
+{
+    const QString path = QFileInfo(configPath).canonicalFilePath();
+    QStringList projects = listedProjects();
+    if (path.isEmpty() || projects.contains(path)) return;
+    projects.append(path);
+    const QString registry = registryPath();
+    if (!QDir().mkpath(QFileInfo(registry).absolutePath())) fail(QStringLiteral("Cannot create ") + QFileInfo(registry).absolutePath());
+    QSaveFile file(registry);
+    const QByteArray data = QJsonDocument(QJsonObject{{QStringLiteral("projects"), QJsonArray::fromStringList(projects)}}).toJson();
+    if (!file.open(QIODevice::WriteOnly) || file.write(data) != data.size() || !file.commit()) {
+        fail(QStringLiteral("Cannot write ") + registry + QStringLiteral(": ") + file.errorString());
+    }
 }
 } // namespace runmark

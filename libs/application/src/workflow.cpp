@@ -237,7 +237,7 @@ StatusResult projectStatus(const QString& configPath)
 
     const StatusFacts facts = observe(config, paths);
 
-    return {config.name, facts.repos, evaluate(config, facts), facts.sessions, facts.plan};
+    return {config.name, facts.repos, evaluate(config, facts), facts.sessions, facts.plan, openExecutions(facts.ledger)};
 }
 
 ResumeResult resumeExecution(const QString& configPath, const QString& taskOrExecution)

@@ -82,7 +82,42 @@ QJsonObject toJson(const StatusResult& result)
                         {QStringLiteral("done"), file.doneCount}, {QStringLiteral("total"), file.checklistCount}});
                 }
                 return plans;
+            }()},
+            {QStringLiteral("open_work"), [&] {
+                QJsonArray open;
+                for (const OpenExecution& execution : result.openWork) {
+                    open.append(QJsonObject{{QStringLiteral("task"), execution.started.task},
+                        {QStringLiteral("exec"), execution.started.exec},
+                        {QStringLiteral("outcome"), execution.outcome.isEmpty() ? QJsonValue::Null : QJsonValue(execution.outcome)},
+                        {QStringLiteral("worktree"), execution.started.worktree},
+                        {QStringLiteral("branch"), execution.started.branch},
+                        {QStringLiteral("last_activity"), execution.lastActivity.isValid()
+                            ? QJsonValue(execution.lastActivity.toString(Qt::ISODate)) : QJsonValue::Null}});
+                }
+                return open;
             }()}};
+}
+
+QString statusSummary(const StatusResult& result)
+{
+    int done = 0;
+    int total = 0;
+    for (const PlanFileFacts& file : result.plan.files) {
+        done += file.doneCount;
+        total += file.checklistCount;
+    }
+    // Plan findings audit past tasks and stay until someone backfills them; in
+    // a sidebar that is a number nobody reads. Only git and context warnings
+    // ask for attention now.
+    int warnings = 0;
+    for (const Finding& finding : result.findings) {
+        if (finding.severity != QLatin1String("info") && finding.domain != QLatin1String("plan")) ++warnings;
+    }
+    QStringList parts;
+    if (total > 0) parts << QStringLiteral("%1/%2").arg(done).arg(total);
+    if (!result.openWork.isEmpty()) parts << QStringLiteral("%1 open").arg(result.openWork.size());
+    if (warnings > 0) parts << QStringLiteral("%1 warn").arg(warnings);
+    return parts.join(QStringLiteral(" · "));
 }
 
 QJsonObject toJson(const SessionFacts& session)

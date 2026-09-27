@@ -22,6 +22,7 @@ struct StatusResult {
     QVector<Finding> findings;
     QVector<SessionFacts> sessions;
     PlanFacts plan;            // per-file progress: how many planned, how many done
+    QVector<OpenExecution> openWork;
 };
 
 struct StartResult {
@@ -85,6 +86,9 @@ QString locateProject(const QString& directory);
 
 QString initializeProject(const QString& folder, const QString& name, const QString& remote,
     const QString& branch, const QString& plan, const QString& taskPrefix);
+// Adds a project.json to ~/.config/runmark/projects.json once. initializeProject
+// does it for new projects; an existing one is registered by `rmk init`.
+void registerProject(const QString& configPath);
 ProjectConfig inspectProject(const QString& configPath);
 StatusResult projectStatus(const QString& configPath);
 StartResult startExecution(const QString& configPath, const QString& task, const QString& agent, const QString& repositoryName, const QStringList& instructions = {});

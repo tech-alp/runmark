@@ -27,7 +27,9 @@ private slots:
         QTemporaryDir directory;
         QVERIFY(directory.isValid());
         qputenv("RUNMARK_SMOKE", "1");
-        const auto resetSmoke = qScopeGuard([] { qunsetenv("RUNMARK_SMOKE"); });
+        // Setup registers the project; keep it out of the real projects.json.
+        qputenv("RUNMARK_CONFIG_HOME", directory.filePath("config").toUtf8());
+        const auto resetSmoke = qScopeGuard([] { qunsetenv("RUNMARK_SMOKE"); qunsetenv("RUNMARK_CONFIG_HOME"); });
         const auto wait = qScopeGuard([] { QThreadPool::globalInstance()->waitForDone(); });
         const auto git = [&](const QStringList& args) {
             QProcess process;

@@ -108,8 +108,15 @@ int main(int argc, char* argv[])
     const QCommandLineOption referenceOption(QStringLiteral("ref"), QStringLiteral("Durable source reference."), QStringLiteral("reference"));
     const QCommandLineOption instructionOption(QStringLiteral("instruction"), QStringLiteral("Instruction path, added to project instructions; repeatable."), QStringLiteral("path"));
     const QCommandLineOption markdownOption(QStringLiteral("markdown"), QStringLiteral("Render resume as Markdown."));
-    parser.addOptions({agentOption, repositoryOption, outcomeOption, kindOption, summaryOption, textOption, referenceOption, instructionOption, markdownOption});
-    parser.addPositionalArgument(QStringLiteral("command"), QStringLiteral("inspect, status, start, finish, resume, evidence, note, or hook."));
+    const QCommandLineOption lineOption(QStringLiteral("line"), QStringLiteral("Render status as one short line."));
+    const QCommandLineOption nameOption(QStringLiteral("name"), QStringLiteral("init: project name (default: folder name)."), QStringLiteral("name"));
+    const QCommandLineOption remoteOption(QStringLiteral("remote"), QStringLiteral("init: git remote."), QStringLiteral("remote"), QStringLiteral("origin"));
+    const QCommandLineOption branchOption(QStringLiteral("branch"), QStringLiteral("init: base branch."), QStringLiteral("branch"), QStringLiteral("main"));
+    const QCommandLineOption planOption(QStringLiteral("plan"), QStringLiteral("init: plan file, created when missing."), QStringLiteral("path"), QStringLiteral("PLAN.md"));
+    const QCommandLineOption prefixOption(QStringLiteral("prefix"), QStringLiteral("init: task prefix, e.g. NA for NA-1."), QStringLiteral("prefix"));
+    parser.addOptions({agentOption, repositoryOption, outcomeOption, kindOption, summaryOption, textOption, referenceOption, instructionOption, markdownOption,
+        lineOption, nameOption, remoteOption, branchOption, planOption, prefixOption});
+    parser.addPositionalArgument(QStringLiteral("command"), QStringLiteral("init, inspect, status, start, finish, resume, evidence, note, or hook."));
     parser.addPositionalArgument(QStringLiteral("argument"), QStringLiteral("Task or execution ID, depending on command."), QStringLiteral("[argument]"));
     parser.process(app);
 
@@ -120,10 +127,36 @@ int main(int argc, char* argv[])
         // Nothing found: keep the old default so the error names a concrete path.
         if (configPath.isEmpty()) configPath = QDir::current().filePath(QStringLiteral(".runmark/project.json"));
         QJsonObject result;
-        if (arguments == QStringList{QStringLiteral("inspect")}) {
+        if (arguments == QStringList{QStringLiteral("init")}) {
+            // Run in the repository root. An existing project is only registered.
+            const QString existing = QDir::current().filePath(QStringLiteral(".runmark/project.json"));
+            if (QFileInfo::exists(existing)) {
+                runmark::registerProject(existing);
+                result = {{QStringLiteral("project"), QFileInfo(existing).canonicalFilePath()}, {QStringLiteral("created"), false}};
+            } else {
+                if (!parser.isSet(prefixOption)) return emitError(QStringLiteral("usage"), QStringLiteral("rmk init needs --prefix for a new project"), 2);
+                const QString plan = QDir::current().filePath(parser.value(planOption));
+                if (!QFileInfo::exists(plan)) {
+                    QDir().mkpath(QFileInfo(plan).absolutePath());
+                    QFile file(plan);
+                    if (!file.open(QIODevice::WriteOnly | QIODevice::NewOnly) || file.write("# Plan\n\n") < 0) {
+                        return emitError(QStringLiteral("runtime"), QStringLiteral("Cannot create plan file ") + plan, 1);
+                    }
+                }
+                const QString name = parser.isSet(nameOption) ? parser.value(nameOption) : QDir::current().dirName();
+                result = {{QStringLiteral("project"), runmark::initializeProject(QDir::currentPath(), name, parser.value(remoteOption),
+                              parser.value(branchOption), parser.value(planOption), parser.value(prefixOption))},
+                          {QStringLiteral("created"), true}};
+            }
+        } else if (arguments == QStringList{QStringLiteral("inspect")}) {
             result = runmark::inspectProject(configPath).toJson();
         } else if (arguments == QStringList{QStringLiteral("status")}) {
-            result = toJson(runmark::projectStatus(configPath));
+            const runmark::StatusResult status = runmark::projectStatus(configPath);
+            if (parser.isSet(lineOption)) {
+                QTextStream(stdout) << runmark::statusSummary(status) << '\n';
+                return 0;
+            }
+            result = toJson(status);
         } else if (arguments.size() == 2 && arguments.constFirst() == QLatin1String("start")) {
             result = toJson(runmark::startExecution(configPath, arguments.constLast(), parser.value(agentOption), parser.value(repositoryOption), parser.values(instructionOption)));
         } else if ((arguments.size() == 1 || arguments.size() == 2) && arguments.constFirst() == QLatin1String("resume")) {
@@ -147,7 +180,7 @@ int main(int argc, char* argv[])
             return runHook(configPath, arguments.constLast());
         } else {
             return emitError(QStringLiteral("usage"),
-                QStringLiteral("Usage: rmk <inspect|status|start|finish|resume|evidence|note|hook> [argument] [options]"), 2);
+                QStringLiteral("Usage: rmk <init|inspect|status|start|finish|resume|evidence|note|hook> [argument] [options]"), 2);
         }
         QTextStream(stdout) << QJsonDocument(result).toJson(QJsonDocument::Indented);
         return 0;

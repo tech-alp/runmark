@@ -21,6 +21,9 @@ QJsonObject toJson(const FinishResult& result);
 QJsonObject toJson(const ResumeResult& result);
 QJsonObject toJson(const SessionFacts& session);
 
+// One short line for a terminal sidebar (herdr cuts it near 22 characters):
+// plan progress, open executions, warnings; empty parts are left out.
+QString statusSummary(const StatusResult& result);
 // The second presentation of the same result: markdown for an agent to read.
 QString resumeMarkdown(const QJsonObject& package);
 // Appended to the session-start context when an earlier session committed
