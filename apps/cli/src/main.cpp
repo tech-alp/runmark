@@ -151,7 +151,8 @@ int main(int argc, char* argv[])
         } else if (arguments == QStringList{QStringLiteral("inspect")}) {
             result = runmark::inspectProject(configPath).toJson();
         } else if (arguments == QStringList{QStringLiteral("status")}) {
-            const runmark::StatusResult status = runmark::projectStatus(configPath);
+            // The line runs on every agent turn in a sidebar: no network.
+            const runmark::StatusResult status = runmark::projectStatus(configPath, !parser.isSet(lineOption));
             if (parser.isSet(lineOption)) {
                 QTextStream(stdout) << runmark::statusSummary(status) << '\n';
                 return 0;

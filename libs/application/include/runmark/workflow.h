@@ -90,7 +90,8 @@ QString initializeProject(const QString& folder, const QString& name, const QStr
 // does it for new projects; an existing one is registered by `rmk init`.
 void registerProject(const QString& configPath);
 ProjectConfig inspectProject(const QString& configPath);
-StatusResult projectStatus(const QString& configPath);
+// fetch = false skips git fetch: remote findings use the last fetched refs.
+StatusResult projectStatus(const QString& configPath, bool fetch = true);
 StartResult startExecution(const QString& configPath, const QString& task, const QString& agent, const QString& repositoryName, const QStringList& instructions = {});
 ResumeResult resumeExecution(const QString& configPath, const QString& taskOrExecution);
 

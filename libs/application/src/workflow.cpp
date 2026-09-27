@@ -98,7 +98,7 @@ QVector<SessionFacts> unregisteredSessions(const ProjectConfig& config, const Pa
 
 // OBSERVE: run git, read the plan, read the ledger, measure what exists on
 // disk. No evaluation happens here.
-StatusFacts observe(const ProjectConfig& config, const Paths& paths)
+StatusFacts observe(const ProjectConfig& config, const Paths& paths, bool fetch)
 {
     StatusFacts facts;
     facts.now = QDateTime::currentDateTimeUtc();
@@ -106,7 +106,7 @@ StatusFacts observe(const ProjectConfig& config, const Paths& paths)
     facts.plan = observePlan(config, paths.root);
 
     for (const RepositoryConfig& repository : config.repositories) {
-        facts.repos.append(observeRepo(repository, expandPath(repository.path, paths.root)));
+        facts.repos.append(observeRepo(repository, expandPath(repository.path, paths.root), fetch));
     }
 
     facts.sessions = readSessions(paths, &facts.sessionsError);
@@ -229,13 +229,13 @@ ProjectConfig inspectProject(const QString& configPath)
     return loadProjectConfig(configPath);
 }
 
-StatusResult projectStatus(const QString& configPath)
+StatusResult projectStatus(const QString& configPath, bool fetch)
 {
     const ProjectConfig config = loadProjectConfig(configPath);
     const Paths paths = pathsFor(configPath);
     prepareState(paths);
 
-    const StatusFacts facts = observe(config, paths);
+    const StatusFacts facts = observe(config, paths, fetch);
 
     return {config.name, facts.repos, evaluate(config, facts), facts.sessions, facts.plan, openExecutions(facts.ledger)};
 }

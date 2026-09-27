@@ -692,6 +692,12 @@ void continuationContract(const QString& executable)
         QByteArray line, error;
         check(run(executable, {"--project", project + "/.runmark/project.json", "status", "--line"}, 0, &line, &error)
             && line == "0/2 · 2 open · 1 warn\n", "one short line for a sidebar (the untracked plan leaves the checkout dirty)");
+        // It runs on every agent turn: an unreachable remote must not show.
+        git({"-C", project, "remote", "set-url", "origin", root + "/missing.git"});
+        check(run(executable, {"--project", project + "/.runmark/project.json", "status", "--line"}, 0, &line, &error)
+            && line == "0/2 · 2 open · 1 warn\n", "the line never fetches");
+        check(hasFinding(cli({"status"}), "git.fetch_failed"), "full status still fetches");
+        git({"-C", project, "remote", "set-url", "origin", root + "/remote.git"});
     }
     QByteArray refusal;
     cli({"start", "MF-2"}, 1, &refusal);

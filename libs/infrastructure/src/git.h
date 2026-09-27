@@ -23,7 +23,8 @@ QString gitCommonDir(const QString& repository);
 
 // --- measurement ---
 QString baseRef(const RepositoryConfig& repository);
-RepoFacts observeRepo(const RepositoryConfig& repository, const QString& repositoryPath);
+// fetch = false measures against the last fetched remote refs, with no network.
+RepoFacts observeRepo(const RepositoryConfig& repository, const QString& repositoryPath, bool fetch = true);
 void observeResumeGit(const ProjectConfig& config, const Paths& paths, ResumeFacts& facts);
 
 // Measures whether a finished execution's worktree can be removed safely.

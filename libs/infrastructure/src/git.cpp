@@ -82,7 +82,7 @@ QString baseRef(const RepositoryConfig& repository)
     return repository.remote + QLatin1Char('/') + repository.branch;
 }
 
-RepoFacts observeRepo(const RepositoryConfig& repository, const QString& repositoryPath)
+RepoFacts observeRepo(const RepositoryConfig& repository, const QString& repositoryPath, bool fetch)
 {
     RepoFacts facts;
     facts.name = repository.name;
@@ -91,9 +91,9 @@ RepoFacts observeRepo(const RepositoryConfig& repository, const QString& reposit
 
     // Fetch is wrapped separately: its failure must not cancel the other
     // measurements. Dirty state and local base lag need no network.
-    const ProcessResult fetchResult = git(repositoryPath, {QStringLiteral("fetch"), QStringLiteral("--quiet"), repository.remote});
-    if (fetchResult.exitCode != 0) {
-        facts.fetchError = fetchResult.error;
+    if (fetch) {
+        const ProcessResult fetchResult = git(repositoryPath, {QStringLiteral("fetch"), QStringLiteral("--quiet"), repository.remote});
+        if (fetchResult.exitCode != 0) facts.fetchError = fetchResult.error;
     }
 
     try {
