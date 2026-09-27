@@ -139,9 +139,18 @@ Format `project.json` içindeki `task_id_pattern` ile eşleşmezse `rmk status`
 
 - [ ] RM-16 — Faz 0b: herdr eklentisi (ADR-025)
 
-  0. herdr'ı kur, ölç: kenar çubuğu token'ının gösterimi, olay içerikleri,
-     herdr panesindeki ajan hook'unun çalışma alanını bilmesi.
-  1. Motor: `rmk status --summary` ve açık işlerin JSON listesi.
+  0. [x] herdr 0.9.1 kuruldu ve ölçüldü (2026-09-27):
+     - Token gösterimi kullanıcı ayarı ister: `~/.config/herdr/config.toml`
+       `[ui.sidebar.spaces] rows` içine `["$runmark"]`. Kenar çubuğu ~22
+       karakterden sonrasını kesiyor; özet kısa olmalı.
+     - Olaylar `workspace_id`, `pane_id`, `agent`, `agent_status`
+       (`blocked|idle|working`) taşır; bağlam JSON'unda `workspace_cwd` var.
+       Oturum kimliği yok.
+     - herdr pane'lerinde `HERDR_WORKSPACE_ID`, `HERDR_BIN_PATH`,
+       `HERDR_SOCKET_PATH` var; içindeki ajanın Runmark hook'u çalışma
+       alanını bilir. Runmark hook'ları herdr içinde oturumu kaydetti.
+  1. Motor: `rmk init` (bugün yalnız desktop kurabiliyor), `rmk status
+     --summary` ve açık işlerin JSON listesi.
   2. Kenar çubuğu: açılışta ve olaylarda proje özeti.
   3. Eylemler: nerede kaldık, devam et, tüm projeler.
   4. Çözümü komut olan uyarılar eyleme bağlanır.
