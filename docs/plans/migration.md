@@ -128,12 +128,18 @@ Format `project.json` içindeki `task_id_pattern` ile eşleşmezse `rmk status`
   - [ ] #4 Kapanmış bir execution'ın dalına `finish`'ten sonra gelen commit
     görünmüyor: RM-15'te `5e2714f` handoff'ta ve resume'da yok.
 
-- [ ] RM-15 — Faz 0b öncesi: Nimbalyst incelemesi
+- [x] RM-15 — Faz 0b öncesi: Nimbalyst incelemesi
 
   İş akışı dosyalarını okuyor mu, dışarıdan kaynak bağlanabiliyor mu (MCP,
   dosya)? Karar: Runmark kendi kokpitini mi büyütür, Nimbalyst'e motor mu olur.
 
+  Karar (2026-09-27): kendi kokpiti. Kullanıcı Nimbalyst'i aktif kullanmıyor;
+  paralel ajanları macOS'ta cmux, Linux'ta herdr ile yönetiyor. Rapor ve
+  inceleme: `docs/designs/nimbalyst-review.md`.
+
 - [ ] RM-16 — Faz 0b: ince çok projeli kokpit
 
-  RM-15 kararına bağlı. Oturumlar, plan ilerlemesi, kararlar; kurtarma
-  düğmeleri ve "ajan bekliyor" bildirimi.
+  Mevcut Qt desktop (`apps/desktop`, `libs/ui-shell`) üzerinde; Nimbalyst
+  sonraya isteğe bağlı görüntüleyici. Kapsam önerisi kullanıcı onayında.
+  Oturumlar, plan ilerlemesi, kararlar; kurtarma düğmeleri ve "ajan bekliyor"
+  bildirimi.

@@ -79,3 +79,7 @@ Raporun doğru tespitleri: MCP'nin pano entegrasyonu için gereksiz olduğu, iki
 6. **Karşılaştırma tabanı:** Mevcut Qt desktop bugün neyi gösteriyor, 0b ölçütüne ne kadar iş kalıyor?
 
 **Yol:** Önce 1 ve 2 (ucuz). Biri "hayır" ise RM-16 mevcut Qt desktop üzerinde ince kokpit olur; Nimbalyst sonraya isteğe bağlı görüntüleyici olarak kalır. İkisi de "evet" ise 3–5 denenir.
+
+### Karar (2026-09-27)
+
+Kanıt 1'in cevabı **hayır**: kullanıcı Nimbalyst'i aktif kullanmıyor; paralel ajanları macOS'ta cmux, Linux'ta herdr ile yönetiyor. RM-16 mevcut Qt desktop üzerinde ince kokpit olarak yapılır; Nimbalyst sonraya isteğe bağlı görüntüleyici olarak kalır. Kanıt 2–5 gereksizleşti.
