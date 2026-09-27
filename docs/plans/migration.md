@@ -137,9 +137,12 @@ Format `project.json` içindeki `task_id_pattern` ile eşleşmezse `rmk status`
   paralel ajanları macOS'ta cmux, Linux'ta herdr ile yönetiyor. Rapor ve
   inceleme: `docs/designs/nimbalyst-review.md`.
 
-- [ ] RM-16 — Faz 0b: ince çok projeli kokpit
+- [ ] RM-16 — Faz 0b: herdr eklentisi (ADR-025)
 
-  Mevcut Qt desktop (`apps/desktop`, `libs/ui-shell`) üzerinde; Nimbalyst
-  sonraya isteğe bağlı görüntüleyici. Kapsam önerisi kullanıcı onayında.
-  Oturumlar, plan ilerlemesi, kararlar; kurtarma düğmeleri ve "ajan bekliyor"
-  bildirimi.
+  0. herdr'ı kur, ölç: kenar çubuğu token'ının gösterimi, olay içerikleri,
+     herdr panesindeki ajan hook'unun çalışma alanını bilmesi.
+  1. Motor: `rmk status --summary` ve açık işlerin JSON listesi.
+  2. Kenar çubuğu: açılışta ve olaylarda proje özeti.
+  3. Eylemler: nerede kaldık, devam et, tüm projeler.
+  4. Çözümü komut olan uyarılar eyleme bağlanır.
+  5. Bir hafta kullanım; Qt desktop kararı.

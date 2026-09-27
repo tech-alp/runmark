@@ -414,3 +414,23 @@ execution'ı gösteriyordu; paralel işler görünmüyordu. Karar:
   olarak listeler.
 
 Sınır: `finished` ya da `abandoned` bir görevi yeniden açmak hâlâ elle yapılır.
+
+## ADR-025 — Kokpitin ilk yüzü herdr eklentisi
+Accepted. Tarih: 2026-09-27. Kaynak: RM-15 incelemesi, `docs/designs/nimbalyst-review.md`.
+
+Kullanıcı Nimbalyst'i kullanmıyor; paralel ajanları herdr'da (macOS ve Linux)
+yönetecek. Kopyalanan komutlu masaüstü düğmeleri, ajanın çalıştığı yerden
+ayrı olduğu için reddedildi. Karar:
+
+- Runmark'ın ilk kullanıcı yüzü ince bir herdr eklentisi: kenar çubuğunda
+  proje özeti (`workspace report-metadata` token'ı), eylem menüsünde "nerede
+  kaldık", "devam et", "tüm projeler"; açılır pencereler.
+- Eklentinin kendi mantığı yok: `rmk` çağırır, sonucu herdr'a iletir. Motor
+  herdr'ı tanımaz ve herdr olmadan bugünkü gibi çalışır (ADR-022).
+- "Kim çalışıyor / kim bekliyor" ve bildirimler herdr'ın ve eklentilerinin
+  işi; Runmark yalnız sürekliliği ekler.
+- Qt desktop bir hafta kullanımdan sonra yeniden değerlendirilir.
+
+Sınırlar: herdr eklenti API'si v1, sürüm kapısı dışında kararlılık
+taahhüdü yok. Token'lar herdr yeniden başlayınca silinir; eklenti açılışta
+yeniden yazar.
