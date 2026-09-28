@@ -57,5 +57,15 @@ claude plugin marketplace add .
 claude plugin install runmark-agent@runmark
 ```
 
+herdr kullanıyorsan [plugins/runmark-herdr](plugins/runmark-herdr) her çalışma
+alanının altına `rmk status --line` özetini yazar (ADR-025):
+
+```sh
+herdr plugin link plugins/runmark-herdr
+# ~/.config/herdr/config.toml
+# [ui.sidebar.spaces]
+# rows = [["state_icon", "workspace"], ["branch", "git_status"], ["$runmark"]]
+```
+
 Projenin `project.json`'una `"hooks_expected": true` yazıldığında hook hiç
 çalışmamışsa `status` bunu `context.hooks_not_observed` olarak bildirir.

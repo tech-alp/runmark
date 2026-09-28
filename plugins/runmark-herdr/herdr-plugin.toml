@@ -1,0 +1,32 @@
+# Runmark in herdr (ADR-025): the `rmk status --line` summary under each
+# workspace in the sidebar, as the $runmark token. The plugin holds no
+# logic of its own; rmk decides, the plugin relays.
+#
+# Show it by adding the token to ~/.config/herdr/config.toml:
+#   [ui.sidebar.spaces]
+#   rows = [["state_icon", "workspace"], ["branch", "git_status"], ["$runmark"]]
+
+id = "runmark.herdr"
+name = "Runmark"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Runmark continuity in the sidebar: plan progress, open work and warnings for each workspace."
+platforms = ["macos", "linux"]
+
+# Tokens are not restored after a herdr restart: publish every workspace.
+[[startup]]
+command = ["sh", "runmark-herdr.sh", "startup"]
+
+[[events]]
+on = "workspace.created"
+command = ["sh", "runmark-herdr.sh", "event"]
+
+[[events]]
+on = "worktree.created"
+command = ["sh", "runmark-herdr.sh", "event"]
+
+# Fires when an agent starts or finishes a turn: commits, notes and open work
+# change there.
+[[events]]
+on = "pane.agent_status_changed"
+command = ["sh", "runmark-herdr.sh", "event"]

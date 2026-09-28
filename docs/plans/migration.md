@@ -158,7 +158,10 @@ Format `project.json` içindeki `task_id_pattern` ile eşleşmezse `rmk status`
      `~/.config/runmark/projects.json`'a kaydeder), `rmk status --line`
      (`17/48 · 3 warn`; plan denetim bulguları sayılmaz) ve `status`
      JSON'unda `open_work`.
-  2. Kenar çubuğu: açılışta ve olaylarda proje özeti.
+  2. [x] Kenar çubuğu: `plugins/runmark-herdr`; açılışta her çalışma
+     alanına, olayda olayın kendi çalışma alanına `rmk status --line`.
+     herdr 0.9.1'de açılış ve `workspace.created` yolu gerçek oturumda
+     doğrulandı.
   3. Eylemler: nerede kaldık, devam et, tüm projeler.
   4. Çözümü komut olan uyarılar eyleme bağlanır.
   5. Bir hafta kullanım; Qt desktop kararı.
