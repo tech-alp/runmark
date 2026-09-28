@@ -296,6 +296,13 @@ void resumeContract(const QString& executable)
         check(idle.value("exists") == true && idle.value("clean") == true && idle.value("merged") == true
             && idle.value("suggested_action").toString() == QStringLiteral("git worktree remove ") + idlePath,
             "clean merged worktree is offered for removal");
+        bool offered = false;
+        for (const QJsonValue& value : cli({"status"}).value("findings").toArray()) {
+            const QJsonObject finding = value.toObject();
+            offered |= finding.value("id") == "git.orphaned_worktree"
+                && finding.value("command").toArray() == QJsonArray{"git", "worktree", "remove", idlePath};
+        }
+        check(offered, "status offers the removal as argv a client runs without a shell");
     }
 
     // Synthetic legacy entries check selection independently of one-second IDs.

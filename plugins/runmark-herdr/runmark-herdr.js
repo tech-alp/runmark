@@ -2,7 +2,7 @@
 // Runmark in herdr. Modes:
 //   startup | event   publish `rmk status --line` as the $runmark token
 //   action <pane>     headless: open that popup in the focused pane's directory
-//   pane <name>       inside the popup: resume, continue or projects
+//   pane <name>       inside the popup: resume, continue, fix or projects
 const { execFileSync, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -16,7 +16,8 @@ const parse = text => { try { return JSON.parse(text || '{}'); } catch { return 
 const context = parse(process.env.HERDR_PLUGIN_CONTEXT_JSON);
 const [mode, name] = process.argv.slice(2);
 
-function publish() {
+// Every workspace when no targets are given.
+function publish(targets) {
   // A workspace's directory is its first pane's: `workspace list` has none.
   const directories = new Map();
   try {
@@ -25,10 +26,7 @@ function publish() {
     }
   } catch { /* herdr unreachable: nothing to publish to */ }
 
-  // The event's own workspace, not the focused one the context describes.
-  const event = parse(process.env.HERDR_PLUGIN_EVENT_JSON).data ?? {};
-  const targets = mode === 'startup' ? [...directories.keys()] : [event.workspace_id ?? context.workspace_id];
-  for (const workspace of targets) {
+  for (const workspace of targets ?? directories.keys()) {
     const cwd = directories.get(workspace) ?? (workspace === context.workspace_id ? context.workspace_cwd : undefined);
     if (!workspace || !cwd) continue;
     let line;
@@ -109,9 +107,30 @@ async function continueWork() {
   run(herdr, ['pane', 'run', created.result.root_pane.pane_id, `${agent} '${prompt.replaceAll("'", "'\\''")}'`]);
 }
 
+// A finding whose fix is one command carries it as argv (`command` in status
+// JSON); it runs without a shell, after the user confirms it.
+async function fix() {
+  const findings = (parse(spawnSync('rmk', ['status'], { encoding: 'utf8' }).stdout).findings ?? [])
+    .filter(finding => finding.command?.length);
+  if (!findings.length) {
+    await ask('No warning here has a command that fixes it. Enter to close. ');
+    return;
+  }
+  findings.forEach((finding, index) => console.log(`${index + 1}) ${finding.title}\n   ${finding.command.join(' ')}`));
+  const finding = findings[Number(await ask('Fix which? ')) - 1];
+  if (!finding || (await ask(`Run ${finding.command.join(' ')}? [y/N] `)).toLowerCase() !== 'y') return;
+  const [program, ...args] = finding.command;
+  const result = spawnSync(program, args, { stdio: ['ignore', 'inherit', 'inherit'] });
+  publish([process.env.HERDR_WORKSPACE_ID]);
+  await ask(`${result.status === 0 ? 'Done' : `Failed (exit ${result.status ?? result.error?.code})`}. Enter to close. `);
+}
+
 if (mode === 'action') openPane();
 else if (mode === 'pane' && name === 'resume') resume();
 else if (mode === 'pane' && name === 'projects') projects();
 // The reader keeps stdin open; exit so the popup closes once the work is handed over.
 else if (mode === 'pane' && name === 'continue') continueWork().finally(() => process.exit());
-else publish();
+else if (mode === 'pane' && name === 'fix') fix().finally(() => process.exit());
+// An event updates its own workspace, not the focused one the context describes.
+else publish(mode === 'startup' ? undefined
+  : [(parse(process.env.HERDR_PLUGIN_EVENT_JSON).data ?? {}).workspace_id ?? context.workspace_id]);

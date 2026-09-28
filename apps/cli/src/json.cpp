@@ -23,6 +23,9 @@ QJsonObject toJson(const Finding& finding)
     if (!finding.suggestedAction.isEmpty()) {
         value.insert(QStringLiteral("suggested_action"), finding.suggestedAction);
     }
+    if (!finding.command.isEmpty()) {
+        value.insert(QStringLiteral("command"), QJsonArray::fromStringList(finding.command));
+    }
     return value;
 }
 

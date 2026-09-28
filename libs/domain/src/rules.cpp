@@ -68,7 +68,13 @@ bool exitCodeCoversTestRun(const QString& command, const QString& testPattern)
 Finding finding(const QString& id, const QString& severity, const QString& domain,
                 const QString& title, const QString& explanation, const QString& action)
 {
-    return {id, severity, domain, title, explanation, action};
+    return {id, severity, domain, title, explanation, action, {}};
+}
+
+static Finding finding(const QString& id, const QString& severity, const QString& domain,
+                const QString& title, const QString& explanation, const QStringList& command)
+{
+    return {id, severity, domain, title, explanation, command.join(QLatin1Char(' ')), command};
 }
 
 QVector<Finding> evaluateResume(const ResumeFacts& facts)
@@ -287,7 +293,7 @@ QVector<Finding> evaluate(const ProjectConfig& config, const StatusFacts& facts)
         findings.append(finding(QStringLiteral("context.interrupted_execution"), QStringLiteral("info"), QStringLiteral("context"),
             QStringLiteral("Execution waits to be continued"),
             open.started.exec + QStringLiteral(" was interrupted; ") + silenceFor(executionFor(facts, open.started.exec), facts.now),
-            QStringLiteral("rmk start ") + open.started.task));
+            QStringList{QStringLiteral("rmk"), QStringLiteral("start"), open.started.task}));
     }
 
     // --- Per execution ---
@@ -315,7 +321,7 @@ QVector<Finding> evaluate(const ProjectConfig& config, const StatusFacts& facts)
                 QStringLiteral("Completed execution still has a worktree"),
                 started.worktree + QStringLiteral(" remains on disk after ") + executionId + QStringLiteral(" (")
                     + started.workspaceSource + QStringLiteral(")"),
-                QStringLiteral("git worktree remove ") + started.worktree));
+                QStringList{QStringLiteral("git"), QStringLiteral("worktree"), QStringLiteral("remove"), started.worktree}));
         }
         if (!completed && !hasHandoff) {
             if (!started.at.isValid()) {
