@@ -162,7 +162,11 @@ Format `project.json` içindeki `task_id_pattern` ile eşleşmezse `rmk status`
      alanına, olayda olayın kendi çalışma alanına `rmk status --line`.
      herdr 0.9.1'de açılış ve `workspace.created` yolu gerçek oturumda
      doğrulandı.
-  3. Eylemler: nerede kaldık, devam et, tüm projeler.
+  3. [x] Eylemler (açılır pencere): nerede kaldık (`rmk resume`), devam et
+     (açık iş seç; `interrupted` ise `rmk start` devralır, hiç bitmemişse
+     worktree'sinde açılır; ajan prompt'uyla başlar), tüm projeler.
+     herdr 0.9.1'de üç pencere canlı açıldı; devam et'in devralma ve ajan
+     başlatma yolu yalnız sahte herdr/rmk ile test edildi.
   4. Çözümü komut olan uyarılar eyleme bağlanır.
   5. Bir hafta kullanım; Qt desktop kararı.
 

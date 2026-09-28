@@ -30,3 +30,47 @@ command = ["sh", "runmark-herdr.sh", "event"]
 [[events]]
 on = "pane.agent_status_changed"
 command = ["sh", "runmark-herdr.sh", "event"]
+
+# Actions run headless with the invocation context; each opens its popup in the
+# focused pane's directory, where the work happens.
+[[actions]]
+id = "resume"
+title = "Runmark: where did we leave off"
+contexts = ["pane", "workspace"]
+command = ["sh", "runmark-herdr.sh", "action", "resume"]
+
+[[actions]]
+id = "continue"
+title = "Runmark: continue open work"
+contexts = ["pane", "workspace"]
+command = ["sh", "runmark-herdr.sh", "action", "continue"]
+
+[[actions]]
+id = "projects"
+title = "Runmark: all projects"
+contexts = ["global", "pane", "workspace"]
+command = ["sh", "runmark-herdr.sh", "action", "projects"]
+
+[[panes]]
+id = "resume"
+title = "Runmark: where did we leave off"
+placement = "popup"
+width = "80%"
+height = "80%"
+command = ["sh", "-c", "exec sh \"$HERDR_PLUGIN_ROOT/runmark-herdr.sh\" pane resume"]
+
+[[panes]]
+id = "continue"
+title = "Runmark: continue open work"
+placement = "popup"
+width = "70%"
+height = 20
+command = ["sh", "-c", "exec sh \"$HERDR_PLUGIN_ROOT/runmark-herdr.sh\" pane continue"]
+
+[[panes]]
+id = "projects"
+title = "Runmark: all projects"
+placement = "popup"
+width = "70%"
+height = 20
+command = ["sh", "-c", "exec sh \"$HERDR_PLUGIN_ROOT/runmark-herdr.sh\" pane projects"]
