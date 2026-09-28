@@ -67,5 +67,9 @@ herdr plugin link plugins/runmark-herdr
 # rows = [["state_icon", "workspace"], ["branch", "git_status"], ["$runmark"]]
 ```
 
+herdr-radar da kuruluysa kenar çubuğunu tek bir tablo yönetebilir: radar'ın
+satırlarını elle yazıp Spaces'e `$runmark` satırını ekle. Radar elle yazılmış
+tabloya dokunmaz (hhdebb/herdr-radar#30'da önerilen yol).
+
 Projenin `project.json`'una `"hooks_expected": true` yazıldığında hook hiç
 çalışmamışsa `status` bunu `context.hooks_not_observed` olarak bildirir.
