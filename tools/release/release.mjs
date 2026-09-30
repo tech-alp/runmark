@@ -26,6 +26,7 @@ export function verifyPublication() {
 
 export function smoke(directory, version) {
   validateVersion(version);
+  assert(!existsSync(resolve(directory, 'bin/runmark-desktop')), 'CLI package must not contain runmark-desktop');
   const binary = resolve(directory, 'bin/rmk');
   const environment = { PATH: '/usr/bin:/bin', TMPDIR: tmpdir(), DYLD_PRINT_LIBRARIES: '1' };
   const result = spawnSync(binary, ['--version'], { env: environment, encoding: 'utf8' });
@@ -53,7 +54,7 @@ export function prepare(version) {
   assert.equal(process.platform, 'darwin');
   assert.equal(process.arch, 'arm64');
   const build = mkdtempSync(join(tmpdir(), 'rmk-release-build-'));
-  run('cmake', ['--preset', 'release', '-B', build, `-DRUNMARK_VERSION=${version}`, '-DRUNMARK_BUNDLE_RUNTIME=ON']);
+  run('cmake', ['--preset', 'release', '-B', build, `-DRUNMARK_VERSION=${version}`, '-DRUNMARK_BUNDLE_RUNTIME=ON', '-DRUNMARK_BUILD_UI=OFF']);
   run('cmake', ['--build', build, '--parallel', '4']);
   try {
     run('ctest', ['--test-dir', build, '--output-on-failure', '--no-tests=error']);
