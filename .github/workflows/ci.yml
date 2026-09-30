@@ -26,6 +26,7 @@ jobs:
           cmake --preset dev
           cmake --build --preset dev
           ctest --preset dev
+          sh plugins/runmark-agent/test.sh build/dev/apps/cli/rmk
       - name: Module and QML bridge
         run: |
           cmake -S tools/module-spike -B build/module-spike -G Ninja \
