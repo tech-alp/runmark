@@ -1,7 +1,6 @@
 module;
 
 #include <QDateTime>
-#include <QHash>
 #include <QMap>
 #include <QRegularExpression>
 #include <QSet>
@@ -188,7 +187,6 @@ QVector<OpenExecution> openExecutions(const Ledger& ledger)
 QVector<Finding> evaluate(const ProjectConfig& config, const StatusFacts& facts)
 {
     QVector<Finding> findings;
-    QHash<QString, QString> remoteBaseShas;
 
     // --- Git ---
     for (const RepoFacts& repository : facts.repos) {
@@ -215,7 +213,6 @@ QVector<Finding> evaluate(const ProjectConfig& config, const StatusFacts& facts)
                 QStringLiteral("Local base is behind remote"),
                 repository.localBase + QStringLiteral(" is ") + QString::number(repository.localBehind) + QStringLiteral(" commits behind ") + repository.base));
         }
-        remoteBaseShas.insert(repository.name, repository.baseSha);
     }
 
     // --- Ledger scan ---
@@ -345,11 +342,14 @@ QVector<Finding> evaluate(const ProjectConfig& config, const StatusFacts& facts)
             findings.append(finding(QStringLiteral("plan.changed_during_execution"), QStringLiteral("warning"), QStringLiteral("plan"),
                 QStringLiteral("Plan changed during execution"), started.task));
         }
-        const QString currentBaseSha = remoteBaseShas.value(started.repo);
-        if (!completed && !currentBaseSha.isEmpty() && currentBaseSha != started.baseSha) {
+        if (!completed && execution && !execution->baseError.isEmpty()) {
+            findings.append(finding(QStringLiteral("git.worktree_base_unknown"), QStringLiteral("warning"), QStringLiteral("git"),
+                QStringLiteral("Worktree base comparison is unavailable"),
+                executionId + QStringLiteral(": ") + execution->baseError));
+        } else if (!completed && execution && execution->includesRemoteBase == false) {
             findings.append(finding(QStringLiteral("git.stale_worktree_base"), QStringLiteral("warning"), QStringLiteral("git"),
                 QStringLiteral("Worktree base is stale"),
-                executionId + QStringLiteral(" was recorded from an older ") + started.base));
+                executionId + QStringLiteral(" does not include the current ") + started.base));
         }
     }
 

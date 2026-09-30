@@ -83,6 +83,10 @@ struct ExecutionFacts {
     // a minute ago, and only the second one is worth staying away from.
     // Invalid when the ledger carried no usable timestamp.
     QDateTime lastActivity;
+    // Whether the observed remote base is an ancestor of the current worktree HEAD.
+    // Unknown when Git cannot inspect the worktree; never inferred from its start SHA.
+    std::optional<bool> includesRemoteBase = std::nullopt;
+    QString baseError = {};
 };
 
 // Ledger events, typed. Only infrastructure's ledger.cpp knows the JSONL keys
