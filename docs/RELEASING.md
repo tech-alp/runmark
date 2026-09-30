@@ -68,7 +68,7 @@ garantisi değildir. Geçici build/test dizinleri tanı için korunur.
 - `docs`/`test`/`chore` tek başına release oluşturmaz.
 - Tek kanal `main`, tag biçimi `vX.Y.Z`; ilk sürümde prerelease yok.
 - Hesaplanan sürüm `-DRUNMARK_VERSION` ile CMake'e girer. Binary, arşiv ve tag
-  aynı sürümdedir. Normal yerel configure varsayılanı hâlâ 0.3.0'dır; son
+  aynı sürümdedir. Normal yerel configure varsayılanı 0.4.0'dır; son
   yayın sürümünün kaynağı repo içindeki bu varsayılan değil Git tag/release'dir.
 - Agent plugin'i bu CLI arşivinden ayrı dağıtılır; `minimum_rmk_version`
   otomatik artırılmaz, uyumluluk değişikliğinde bilinçli güncellenir.
@@ -91,7 +91,7 @@ yayın olmadığını doğruladı; ilk sürüm/bootstrap kararı henüz verilmed
    içerik doğruluğunun/lisans uyumluluğunun yerine geçmez.
 4. İlk sürüm/bootstrap politikasını kararlaştır ve mevcut baseline gerektiren
    yayın kapısını bu karara göre test ederek düzenle. Geçmiş yayın yok;
-   0.3.0 kod sabiti yayın kanıtı değildir. Tarihsel baseline uydurulmaz ve
+   Yerel sürüm varsayılanı yayın kanıtı değildir. Tarihsel baseline uydurulmaz ve
    yanlışlıkla 1.0.0 başlatılmaz.
 5. `publish=false` dry-run, sonra onaylı `publish=true` çalıştır.
 

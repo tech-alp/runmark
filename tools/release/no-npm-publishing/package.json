@@ -1,0 +1,6 @@
+{
+  "name": "runmark-no-npm-publishing",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.cjs"
+}

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 plugin_root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-exec node - "$plugin_root" <<'NODE'
+exec node - "$plugin_root" "${1:-}" <<'NODE'
 'use strict';
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -194,6 +194,30 @@ else process.stdout.write(process.env.FAKE_OUTPUT || '');
       assert.deepEqual(result.calls, [['--version']]);
       assert.equal(result.stdout, '');
     }
+  });
+  if (process.argv[3]) check('real CLI: SessionStart injects context and records startup', () => {
+    const cli = path.resolve(process.argv[3]);
+    const fixture = path.join(temporary, 'project');
+    fs.mkdirSync(fixture);
+    const env = { ...process.env, HOME: temporary, RUNMARK_CONFIG_HOME: path.join(temporary, 'config') };
+    for (const [command, args] of [
+      ['git', ['init', '-q', '-b', 'main']],
+      ['git', ['remote', 'add', 'origin', fixture]],
+      [cli, ['init', '--prefix', 'TEST']],
+    ]) {
+      const result = spawnSync(command, args, { cwd: fixture, env, encoding: 'utf8' });
+      assert.ifError(result.error);
+      assert.equal(result.status, 0, result.stderr);
+    }
+    fs.unlinkSync(path.join(bin, 'rmk'));
+    fs.symlinkSync(cli, path.join(bin, 'rmk'));
+    const result = run(JSON.stringify({ cwd: fixture, session_id: 'real-start', source: 'startup' }),
+      { RUNMARK_CONFIG_HOME: env.RUNMARK_CONFIG_HOME });
+    assert.equal(result.stderr, '');
+    assert.match(result.stdout, /^# Runmark resume\b/);
+    const events = fs.readFileSync(path.join(fixture, '.runmark/sessions/real-start.jsonl'), 'utf8')
+      .trim().split('\n').map(JSON.parse);
+    assert(events.some(event => event.type === 'session.started' && event.source === 'startup'));
   });
 } finally {
   fs.rmSync(temporary, { recursive: true, force: true });
