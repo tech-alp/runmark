@@ -8,6 +8,7 @@ import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { createRequire } from 'node:module';
 
 test('only stable SemVer values may reach build commands', () => {
   for (const version of ['0.3.0', '1.0.0', '12.34.56']) assert.equal(validateVersion(version), version);
@@ -37,6 +38,9 @@ test('release excludes npm publishing and version/changelog commits', () => {
     assert(!name.includes('@semantic-release/npm/'));
     assert(!name.includes('@semantic-release/git/'));
   }
+  const require = createRequire(import.meta.url);
+  assert.throws(() => require('@semantic-release/npm'), /Runmark does not publish npm packages/);
+  assert.throws(() => require.resolve('npm/package.json'), { code: 'MODULE_NOT_FOUND' });
 });
 
 test('real semantic-release dry-run computes 0.3.1 without creating a tag', async () => {
