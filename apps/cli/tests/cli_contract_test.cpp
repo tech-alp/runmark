@@ -2,7 +2,6 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QCryptographicHash>
-#include <QDateTime>
 #include <QElapsedTimer>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -334,7 +333,6 @@ void transcriptContract(const QString& executable)
     check(QDir().mkpath(root + "/.runmark"), "transcript state directory");
     check(writeFile(root + "/plan.md", "- [x] MF-1\n- [x] MF-2\n"), "transcript plan");
     check(writeFile(configPath, R"({"version":1,"name":"t","worktree_root":"worktrees","repos":[{"name":"repo","path":"repo","base":{"remote":"origin","branch":"main"}}],"plan":{"paths":["plan.md"]},"task_id_pattern":"MF-\\d+"})"), "transcript config");
-    const QByteArray now = QDateTime::currentDateTimeUtc().addSecs(1).toString(Qt::ISODateWithMs).toUtf8();
     const QByteArray claudeHome = qgetenv("CLAUDE_CONFIG_DIR");
     const QByteArray codexHome = qgetenv("CODEX_HOME");
 
@@ -344,12 +342,14 @@ void transcriptContract(const QString& executable)
     const QString exec = cli({"start", "MF-1", "--agent", "claude"}).value("exec").toString();
     const QString ledger = root + "/.runmark/ledger/" + exec + ".jsonl";
     check(lastEvent(ledger).value("session_id") == "session-1", "start records the runtime session");
+    // One wall-clock snapshot can predate later executions on a slow runner.
+    const QByteArray claudeAt = lastEvent(ledger).value("ts").toString().toUtf8();
     check(QDir().mkpath(root + "/claude/projects/-encoded"), "claude projects directory");
     check(writeFile(root + "/claude/projects/-encoded/session-1.jsonl",
-        "{\"timestamp\":\"" + now + "\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"id\":\"t1\",\"name\":\"Bash\",\"input\":{\"command\":\"cd w && ctest --preset dev\"}}]}}\n"
-        "{\"timestamp\":\"" + now + "\",\"message\":{\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t1\",\"is_error\":true,\"content\":\"Exit code 8\\nfailed\"}]}}\n"
-        "{\"timestamp\":\"" + now + "\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"id\":\"t2\",\"name\":\"Bash\",\"input\":{\"command\":\"ls\"}}]}}\n"
-        "{\"timestamp\":\"" + now + "\",\"message\":{\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t2\",\"content\":\"file\"}]}}\n"
+        "{\"timestamp\":\"" + claudeAt + "\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"id\":\"t1\",\"name\":\"Bash\",\"input\":{\"command\":\"cd w && ctest --preset dev\"}}]}}\n"
+        "{\"timestamp\":\"" + claudeAt + "\",\"message\":{\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t1\",\"is_error\":true,\"content\":\"Exit code 8\\nfailed\"}]}}\n"
+        "{\"timestamp\":\"" + claudeAt + "\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"id\":\"t2\",\"name\":\"Bash\",\"input\":{\"command\":\"ls\"}}]}}\n"
+        "{\"timestamp\":\"" + claudeAt + "\",\"message\":{\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t2\",\"content\":\"file\"}]}}\n"
         "{\"timestamp\":\"2000-01-01T00:00:00.000Z\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"id\":\"t0\",\"name\":\"Bash\",\"input\":{\"command\":\"ctest\"}}]}}\n"
         "{\"timestamp\":\"2000-01-01T00:00:00.000Z\",\"message\":{\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t0\",\"content\":\"ok\"}]}}\n"),
         "claude transcript");
@@ -380,9 +380,10 @@ void transcriptContract(const QString& executable)
     qputenv("CODEX_HOME", (root + "/codex").toUtf8());
     qputenv("CODEX_THREAD_ID", "thread-1");
     const QString codex = cli({"start", "MF-3", "--agent", "codex"}).value("exec").toString();
+    const QByteArray codexAt = lastEvent(root + "/.runmark/ledger/" + codex + ".jsonl").value("ts").toString().toUtf8();
     check(QDir().mkpath(root + "/codex/sessions/2026/09/25"), "codex sessions directory");
     check(writeFile(root + "/codex/sessions/2026/09/25/rollout-2026-09-25T00-00-00-thread-1.jsonl",
-        "{\"timestamp\":\"" + now + "\",\"type\":\"event_msg\",\"payload\":{\"type\":\"item_completed\",\"item\":{\"type\":\"CommandExecution\",\"command\":[\"/bin/zsh\",\"-lc\",\"pytest -q\"],\"exit_code\":0}}}\n"),
+        "{\"timestamp\":\"" + codexAt + "\",\"type\":\"event_msg\",\"payload\":{\"type\":\"item_completed\",\"item\":{\"type\":\"CommandExecution\",\"command\":[\"/bin/zsh\",\"-lc\",\"pytest -q\"],\"exit_code\":0}}}\n"),
         "codex transcript");
     cli({"finish", codex});
     const QJsonObject codexTested = runtimeEvidence(root + "/.runmark/ledger/" + codex + ".jsonl");
@@ -392,8 +393,9 @@ void transcriptContract(const QString& executable)
     // Piped into tail, a failing suite exits 0: the result is unknown, never a pass.
     qputenv("CODEX_THREAD_ID", "thread-2");
     const QString piped = cli({"start", "MF-4", "--agent", "codex"}).value("exec").toString();
+    const QByteArray pipedAt = lastEvent(root + "/.runmark/ledger/" + piped + ".jsonl").value("ts").toString().toUtf8();
     check(writeFile(root + "/codex/sessions/2026/09/25/rollout-2026-09-25T00-00-01-thread-2.jsonl",
-        "{\"timestamp\":\"" + now + "\",\"type\":\"event_msg\",\"payload\":{\"type\":\"item_completed\",\"item\":{\"type\":\"CommandExecution\",\"command\":[\"/bin/zsh\",\"-lc\",\"ctest --preset dev 2>&1 | tail -5\"],\"exit_code\":0}}}\n"),
+        "{\"timestamp\":\"" + pipedAt + "\",\"type\":\"event_msg\",\"payload\":{\"type\":\"item_completed\",\"item\":{\"type\":\"CommandExecution\",\"command\":[\"/bin/zsh\",\"-lc\",\"ctest --preset dev 2>&1 | tail -5\"],\"exit_code\":0}}}\n"),
         "piped transcript");
     cli({"finish", piped});
     check(runtimeEvidence(root + "/.runmark/ledger/" + piped + ".jsonl").value("exit_code").isNull(), "piped exit code recorded as unknown");
