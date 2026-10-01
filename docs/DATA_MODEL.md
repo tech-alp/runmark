@@ -404,10 +404,10 @@ her seferinde baştan üretmek yeterince hızlı.
   "id": "git.stale_worktree_base",
   "severity": "warning",
   "domain": "git",
-  "title": "Worktree base 21 commit geride",
-  "explanation": "task/SCMS-042 branch'i a1b2c3d'den açıldı, origin/development şu an 9f0e1d2.",
+  "title": "Worktree base is stale",
+  "explanation": "20260920T120000Z-SCMS-042 does not include the current origin/development",
   "evidence": [
-    {"kind": "command", "ref": "git merge-base task/SCMS-042 origin/development"}
+    {"kind": "command", "ref": "git -C ~/worktrees/SCMS-042 merge-base --is-ancestor origin/development HEAD"}
   ],
   "suggested_action": "git -C ~/worktrees/SCMS-042 rebase origin/development"
 }
@@ -420,6 +420,13 @@ kullanıcı kural id'siyle susturur.
 `severity`: `info` | `warning` | `blocking`
 `domain`: `git` | `plan` | `execution` | `context`
 
+`git.stale_worktree_base`, açık execution'ın mevcut worktree `HEAD`'inin gözlenen
+uzak ana dalı içermediğini bildirir. Rebase veya merge ile uzak ana dal alındığında
+uyarı kalkar; başlangıç kaydı değiştirilmez. Karşılaştırma yapılamıyorsa
+`git.worktree_base_unknown` üretilir. `status --line` son fetch edilen referansları
+kullanır. Resume'daki `git.base_advanced` ise başlangıçtan beri uzak ana dalın
+ilerlediğini bildiren ayrı bir tarihçe bilgisidir.
+
 ### v0.1 kural kataloğu
 
 MVP.md §8'in birebir karşılığı. Dokuz kural, fazlası yok.
@@ -430,6 +437,7 @@ MVP.md §8'in birebir karşılığı. Dokuz kural, fazlası yok.
 | `git.stale_local_base` | warning |
 | `git.dirty_workspace` | warning |
 | `git.stale_worktree_base` | warning |
+| `git.worktree_base_unknown` | warning |
 | `plan.done_without_evidence` | warning |
 | `plan.ambiguous_task_id` | warning |
 | `plan.execution_without_plan_link` | info |

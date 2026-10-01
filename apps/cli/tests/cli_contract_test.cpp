@@ -235,7 +235,35 @@ void resumeContract(const QString& executable)
 
     const QJsonValue emptyInstructions = cli({"resume", secondExec}).value("instructions");
     check(emptyInstructions.isArray() && emptyInstructions.toArray().isEmpty(), "empty instruction list");
+    const QString secondWorktree = second.value("worktree").toString();
+    const QString secondLedger = root + "/.runmark/ledger/" + secondExec + ".jsonl";
+    const QByteArray secondBefore = readFile(secondLedger);
+    const QJsonObject freshStatus = cli({"status"});
+    check(!hasFinding(freshStatus, "git.stale_worktree_base") && !hasFinding(freshStatus, "git.worktree_base_unknown"),
+        "new worktree includes current base");
+    check(writeFile(secondWorktree + "/work.txt", "feature\n"), "worktree feature file");
+    git({"-C", secondWorktree, "add", "work.txt"});
+    git({"-C", secondWorktree, "commit", "-m", "MF-2 implementation"});
+    git({"-C", repo, "commit", "--allow-empty", "-m", "advance before rebase"});
+    git({"-C", repo, "push"});
+    check(hasFinding(cli({"status"}), "git.stale_worktree_base"), "worktree missing new base is stale");
+    git({"-C", secondWorktree, "rebase", "origin/main"});
+    const QJsonObject rebasedStatus = cli({"status"});
+    check(!hasFinding(rebasedStatus, "git.stale_worktree_base") && !hasFinding(rebasedStatus, "git.worktree_base_unknown"),
+        "rebase clears stale worktree warning");
+    git({"-C", repo, "commit", "--allow-empty", "-m", "advance before merge"});
+    git({"-C", repo, "push"});
+    check(hasFinding(cli({"status"}), "git.stale_worktree_base"), "later base advance is stale again");
+    git({"-C", secondWorktree, "merge", "--no-edit", "origin/main"});
+    const QJsonObject mergedStatus = cli({"status"});
+    check(!hasFinding(mergedStatus, "git.stale_worktree_base") && !hasFinding(mergedStatus, "git.worktree_base_unknown"),
+        "merge clears stale worktree warning");
+    check(hasGap(cli({"resume", secondExec}), "git.base_advanced"), "resume retains historical base advancement");
+    check(readFile(secondLedger) == secondBefore, "base checks preserve the execution start record");
     git({"-C", repo, "worktree", "remove", second.value("worktree").toString()});
+    const QJsonObject missingStatus = cli({"status"});
+    check(hasFinding(missingStatus, "git.worktree_base_unknown") && !hasFinding(missingStatus, "git.stale_worktree_base"),
+        "missing worktree base is unknown rather than stale or current");
     const QJsonObject missingActive = cli({"resume", secondExec});
     check(hasGap(missingActive, "git.measurement_unavailable") && missingActive.value("measured").toObject().value("commits").isNull(), "missing active measurements unknown");
 

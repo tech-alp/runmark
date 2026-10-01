@@ -116,12 +116,29 @@ StatusFacts observe(const ProjectConfig& config, const Paths& paths, bool fetch)
     }
     facts.unregisteredSessions = unregisteredSessions(config, paths, facts.sessions, facts.now);
 
+    QSet<QString> finishedExecutions;
+    for (const ExecutionFinished& finished : facts.ledger.finished) finishedExecutions.insert(finished.exec);
     for (const ExecutionStarted& started : facts.ledger.started) {
         ExecutionFacts execution;
         execution.exec = started.exec;
         execution.hasHandoff = QFileInfo::exists(QDir(paths.handoffs).filePath(execution.exec + QStringLiteral(".md")));
         execution.worktreeExists = !started.worktree.isEmpty() && QFileInfo::exists(started.worktree);
         execution.agent = started.agent;
+        if (!finishedExecutions.contains(started.exec)) {
+            execution.baseError = QStringLiteral("Remote base could not be measured");
+            for (const RepoFacts& repository : facts.repos) {
+                if (repository.name != started.repo || !repository.measured) continue;
+                const ProcessResult ancestry = git(started.worktree,
+                    {QStringLiteral("merge-base"), QStringLiteral("--is-ancestor"), repository.baseSha, QStringLiteral("HEAD")});
+                if (ancestry.exitCode == 0 || ancestry.exitCode == 1) {
+                    execution.includesRemoteBase = ancestry.exitCode == 0;
+                    execution.baseError.clear();
+                } else {
+                    execution.baseError = ancestry.error.isEmpty() ? QStringLiteral("Cannot inspect worktree ancestry") : ancestry.error;
+                }
+                break;
+            }
+        }
         // The newest timestamp across this execution's events. Scanning is
         // cheap and honest: no separate heartbeat to fall out of sync with the
         // record it claims to describe.
