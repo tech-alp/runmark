@@ -64,6 +64,11 @@ int runHook(const QString& configPath, const QString& event)
             sections.insert(notesFirst ? 1 : 2, sessionNotesMarkdown(*started.lastWithNotes, started.lastNotes));
         }
         if (started.previousWithoutNotes) sections << sessionWithoutNotesMarkdown(*started.previousWithoutNotes);
+        // First, above everything: work another session cannot see. No fetch,
+        // the same cost as the sidebar's status line.
+        try {
+            sections.prepend(localOnlyMarkdown(runmark::projectStatus(configPath, false).repositories));
+        } catch (const std::exception&) { /* the rest of the context still helps */ }
         sections.removeAll(QString());
         for (QString& section : sections) section = section.trimmed();
         out << sections.join(QStringLiteral("\n\n")) << '\n';

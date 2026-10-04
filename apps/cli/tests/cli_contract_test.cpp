@@ -143,9 +143,17 @@ void resumeContract(const QString& executable)
         && instructions.at(2).toObject().value("sha1").isNull(), "instruction provenance schema");
     const auto hash = [](const QByteArray& content) { return QString::fromLatin1(QCryptographicHash::hash(content, QCryptographicHash::Sha1).toHex()); };
     check(instructions.at(0).toObject().value("sha1") == hash(readFile(root + "/AGENTS.md")), "instruction hash");
+    const auto localOnly = [&] {
+        for (const QJsonValue& value : cli({"status"}).value("findings").toArray()) {
+            if (value.toObject().value("id") == "git.local_only_commits") return value.toObject().value("explanation").toString();
+        }
+        return QString();
+    };
+    check(localOnly().isEmpty(), "a new branch at the pushed base holds nothing local");
     check(writeFile(worktree + "/file.txt", "changed\n"), "worktree edit");
     git({"-C", worktree, "add", "."});
     git({"-C", worktree, "commit", "-m", "MF-1 implementation"});
+    check(localOnly().startsWith("repo: task/MF-1 (1) on no remote"), "an unpushed commit is reported with its branch");
     const QJsonObject active = cli({"resume", exec});
     check(active.value("measured").toObject().value("source") == "git"
         && active.value("measured").toObject().value("commits").toArray().size() == 1
@@ -199,7 +207,10 @@ void resumeContract(const QString& executable)
     check(hasFinding(cli({"status"}), "context.hooks_not_observed"), "hook blindness reported");
     const QByteArray context = hook(executable, root, "session-start",
         R"({"session_id":"s-start","cwd":")" + root.toUtf8() + R"(","transcript_path":"/x/.claude/projects/p/s-start.jsonl","source":"startup"})");
-    check(context.startsWith("# Runmark resume:"), "session start hands the resume context to the agent");
+    // task/MF-1's commit was never pushed: that comes first, above the resume.
+    check(context.startsWith("## Only on this machine") && context.contains("- repo `task/MF-1`: 1 commit(s)"),
+        "session start opens with work no other session can see");
+    check(context.contains("\n# Runmark resume:"), "session start hands the resume context to the agent");
     check(QFile::exists(root + "/.runmark/sessions/s-start.jsonl"), "session start records the session");
     check(readFile(ledger) == before, "session start appends no ledger event");
     check(!hasFinding(cli({"status"}), "context.hooks_not_observed"), "a recorded session clears the finding");
@@ -450,6 +461,52 @@ int runIn(const QString& executable, const QStringList& arguments, const QString
     check(process.waitForStarted(5000) && process.waitForFinished(10000), "rmk runs");
     *output = process.readAllStandardOutput();
     return process.exitCode();
+}
+
+// Work that exists only on this machine is reported per branch; a change that
+// already reached the base under another SHA is not lost and is not reported.
+void localOnlyContract(const QString& executable)
+{
+    QTemporaryDir fixture;
+    check(fixture.isValid(), "local-only fixture");
+    const QString root = QFileInfo(fixture.path()).canonicalFilePath();
+    const QString repo = root + "/repo";
+    const auto git = [&](const QStringList& args) {
+        QByteArray out, err;
+        check(run(QStringLiteral("git"), QStringList{"-C", repo, "-c", "user.name=R", "-c", "user.email=r@example.invalid"} + args, 0, &out, &err),
+            "local-only git fixture command");
+        return QString::fromUtf8(out).trimmed();
+    };
+    QByteArray out, err;
+    check(run(QStringLiteral("git"), {"init", "--bare", root + "/remote.git"}, 0, &out, &err)
+        && run(QStringLiteral("git"), {"init", "-b", "main", repo}, 0, &out, &err), "local-only repositories");
+    git({"commit", "--allow-empty", "-m", "initial"});
+    git({"remote", "add", "origin", root + "/remote.git"});
+    git({"push", "-u", "origin", "main"});
+    check(QDir().mkpath(repo + "/.runmark") && writeFile(repo + "/plan.md", "- [ ] MF-1\n")
+        && writeFile(repo + "/.runmark/project.json", R"({"version":1,"name":"l","worktree_root":"wt","repos":[{"name":"r","path":".","base":{"remote":"origin","branch":"main"}}],"plan":{"paths":["plan.md"]},"task_id_pattern":"MF-\\d+"})"),
+        "local-only project");
+    const auto reported = [&] {
+        QByteArray out;
+        check(runIn(executable, {"status"}, repo, &out) == 0, "local-only status");
+        for (const QJsonValue& value : QJsonDocument::fromJson(out).object().value("findings").toArray()) {
+            if (value.toObject().value("id") == "git.local_only_commits") return value.toObject().value("explanation").toString();
+        }
+        return QString();
+    };
+    check(reported().isEmpty(), "everything pushed, nothing reported");
+
+    git({"switch", "-c", "side"});
+    check(writeFile(repo + "/side.txt", "side\n"), "side change");
+    git({"add", "side.txt"});
+    git({"commit", "-m", "side work"});
+    git({"switch", "main"});
+    check(reported().startsWith("r: side (1) on no remote"), "an unpushed branch commit is reported");
+
+    // Landed through a cherry-pick: same change, new SHA, now on the base.
+    git({"cherry-pick", "side"});
+    git({"push"});
+    check(reported().isEmpty(), "a change already on the base is not lost work");
 }
 
 // Agents work in worktrees outside the project root and in subdirectories;
@@ -728,16 +785,18 @@ void continuationContract(const QString& executable)
     QThread::sleep(1);  // execution IDs have one-second resolution
     const QString second = cli({"start", "MF-2"}).value("exec").toString();
     const QByteArray context = hook(executable, project, "session-start", R"({"session_id":"c1","cwd":")" + project.toUtf8() + R"("})");
-    check(context.startsWith("## Open work") && context.contains("- MF-1: " + first.value("exec").toString().toUtf8() + " interrupted")
+    // MF-1's "half done" commit was never pushed, so that section leads.
+    check(context.startsWith("## Only on this machine") && context.indexOf("## Open work") < context.indexOf("# Runmark resume")
+        && context.contains("- MF-1: " + first.value("exec").toString().toUtf8() + " interrupted")
         && !context.contains("- MF-2:"), "session start lists open work besides the resumed execution");
     {
         QByteArray line, error;
         check(run(executable, {"--project", project + "/.runmark/project.json", "status", "--line"}, 0, &line, &error)
-            && line == "0/2 · 2 open · 1 warn\n", "one short line for a sidebar (the untracked plan leaves the checkout dirty)");
+            && line == "0/2 · 2 open · 2 warn\n", "one short line for a sidebar (dirty checkout, MF-1's unpushed commit)");
         // It runs on every agent turn: an unreachable remote must not show.
         git({"-C", project, "remote", "set-url", "origin", root + "/missing.git"});
         check(run(executable, {"--project", project + "/.runmark/project.json", "status", "--line"}, 0, &line, &error)
-            && line == "0/2 · 2 open · 1 warn\n", "the line never fetches");
+            && line == "0/2 · 2 open · 2 warn\n", "the line never fetches");
         check(hasFinding(cli({"status"}), "git.fetch_failed"), "full status still fetches");
         git({"-C", project, "remote", "set-url", "origin", root + "/remote.git"});
     }
@@ -828,6 +887,7 @@ int main(int argc, char* argv[])
         resumeContract(executable);
         transcriptContract(executable);
         discoveryContract(executable);
+        localOnlyContract(executable);
         sessionContract(executable);
         continuationContract(executable);
         initContract(executable);

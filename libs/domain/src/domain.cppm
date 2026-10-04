@@ -54,6 +54,12 @@ struct ProjectConfig {
 
 export namespace runmark {
 
+// A local branch carrying commits that no remote ref contains.
+struct LocalOnlyBranch {
+    QString branch;
+    int commits = 0;
+};
+
 struct RepoFacts {
     QString name;
     QString path;
@@ -67,6 +73,7 @@ struct RepoFacts {
     QString localBase;         // name of the local base branch
     bool localBaseExists = false;
     int localBehind = 0;
+    QVector<LocalOnlyBranch> localOnly;   // commits that exist only on this machine
     QString fetchError;        // non-empty means fetch failed: a diagnosis, not evidence
     QString measurementError;  // non-empty means measurement stopped halfway
     bool measured = false;
