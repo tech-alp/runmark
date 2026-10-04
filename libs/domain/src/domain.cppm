@@ -328,6 +328,10 @@ struct Finding {
     QString title;
     QString explanation;
     QString suggestedAction;   // may be empty
+    // The same action as a program and its arguments, when it is one command
+    // that resolves the finding; empty when the action is advice. A client
+    // runs it without a shell, so a path is never split or interpreted.
+    QStringList command;
 };
 
 } // namespace runmark

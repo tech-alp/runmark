@@ -413,6 +413,14 @@ her seferinde baştan üretmek yeterince hızlı.
 }
 ```
 
+Çözümü tek bir komut olan bulgu bunu ayrıca `command` dizisi olarak taşır
+(`["git", "worktree", "remove", "/worktrees/SCMS-042"]`); `suggested_action`
+aynı komutun okunur hâlidir. İstemci (herdr eklentisinin düzelt eylemi) diziyi
+kabuk olmadan çalıştırır, boşluklu yol bölünmez. Tavsiye olan eylemde
+`command` yoktur. `status`'taki `git.orphaned_worktree` komutu temizlik
+denetimi yapmaz; kirli worktree'yi `git worktree remove` kendisi reddeder,
+dal silinmez.
+
 `id` rastgele değil, `<domain>.<rule>` biçiminde sabit anahtar.
 Bu sayede Phase 7'deki "configurable trust policies" bedava gelir —
 kullanıcı kural id'siyle susturur.

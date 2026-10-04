@@ -67,9 +67,10 @@ herdr plugin link plugins/runmark-herdr
 # rows = [["state_icon", "workspace"], ["branch", "git_status"], ["$runmark"]]
 ```
 
-Eklenti ayrıca üç eylem ekler (pane'e sağ tık ya da `[[keys.command]]` ile
-`runmark.herdr.resume`, `.continue`, `.projects`): nerede kaldık, açık işe
-devam et ve tüm projeler.
+Eklenti ayrıca dört eylem ekler (pane'e sağ tık ya da `[[keys.command]]` ile
+`runmark.herdr.resume`, `.continue`, `.fix`, `.projects`): nerede kaldık, açık
+işe devam et, uyarıyı düzelt ve tüm projeler. Düzelt yalnız çözümü tek komut
+olan bulguları listeler ve seçileni onaydan sonra kabuksuz çalıştırır.
 
 herdr-radar da kuruluysa kenar çubuğunu tek bir tablo yönetebilir: radar'ın
 satırlarını elle yazıp Spaces'e `$runmark` satırını ekle. Radar elle yazılmış

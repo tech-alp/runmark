@@ -46,6 +46,12 @@ contexts = ["pane", "workspace"]
 command = ["sh", "runmark-herdr.sh", "action", "continue"]
 
 [[actions]]
+id = "fix"
+title = "Runmark: fix warnings"
+contexts = ["pane", "workspace"]
+command = ["sh", "runmark-herdr.sh", "action", "fix"]
+
+[[actions]]
 id = "projects"
 title = "Runmark: all projects"
 contexts = ["global", "pane", "workspace"]
@@ -66,6 +72,14 @@ placement = "popup"
 width = "70%"
 height = 20
 command = ["sh", "-c", "exec sh \"$HERDR_PLUGIN_ROOT/runmark-herdr.sh\" pane continue"]
+
+[[panes]]
+id = "fix"
+title = "Runmark: fix warnings"
+placement = "popup"
+width = "70%"
+height = 20
+command = ["sh", "-c", "exec sh \"$HERDR_PLUGIN_ROOT/runmark-herdr.sh\" pane fix"]
 
 [[panes]]
 id = "projects"

@@ -1,14 +1,52 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { validateVersion } from './release.mjs';
+import { auditAllowlist, checkAudit } from './audit.mjs';
 import { analyzeCommits } from '@semantic-release/commit-analyzer';
 import releaseConfig from '../../release.config.cjs';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
+
+const auditFixture = () => JSON.parse(readFileSync(new URL('./fixtures/npm-audit.json', import.meta.url), 'utf8'));
+const auditDate = '2026-10-04';
+
+test('audit allows only the listed advisory, including cyclic transitive findings', () => {
+  const accepted = checkAudit(auditFixture(), auditAllowlist, auditDate);
+  assert.deepEqual([...accepted.keys()], ['GHSA-vfj7-8cjw-p6xm']);
+});
+
+test('audit rejects an unlisted high or critical advisory in an already allowed package', () => {
+  for (const severity of ['high', 'critical']) {
+    const report = auditFixture();
+    report.vulnerabilities.braces.via.push({
+      severity, url: 'https://github.com/advisories/GHSA-xxxx-yyyy-zzzz',
+    });
+    assert.throws(() => checkAudit(report, auditAllowlist, auditDate), /Unlisted .* advisory/);
+  }
+});
+
+test('audit exceptions expire at the start of their expiry date in UTC', () => {
+  assert.doesNotThrow(() => checkAudit(auditFixture(), auditAllowlist, '2026-11-03'));
+  for (const today of ['2026-11-04', '2026-11-05']) {
+    assert.throws(() => checkAudit(auditFixture(), auditAllowlist, today), /Expired audit exception/);
+  }
+});
+
+test('audit fails closed on errors, missing details and invalid exception metadata', () => {
+  for (const report of [null, {}, { ...auditFixture(), error: { code: 'ENOAUDIT' } }]) {
+    assert.throws(() => checkAudit(report, auditAllowlist, auditDate), /Invalid npm audit report/);
+  }
+  const report = auditFixture();
+  delete report.vulnerabilities.braces;
+  assert.throws(() => checkAudit(report, auditAllowlist, auditDate), /Missing audit details/);
+  for (const entry of [{ reason: '', expires: '2026-11-04' }, { reason: 'temporary', expires: '2026-11-31' }]) {
+    assert.throws(() => checkAudit(auditFixture(), { 'GHSA-vfj7-8cjw-p6xm': entry }, auditDate), /Missing reason|Invalid expiry/);
+  }
+});
 
 test('only stable SemVer values may reach build commands', () => {
   for (const version of ['0.3.0', '1.0.0', '12.34.56']) assert.equal(validateVersion(version), version);

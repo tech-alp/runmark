@@ -296,6 +296,13 @@ void resumeContract(const QString& executable)
         check(idle.value("exists") == true && idle.value("clean") == true && idle.value("merged") == true
             && idle.value("suggested_action").toString() == QStringLiteral("git worktree remove ") + idlePath,
             "clean merged worktree is offered for removal");
+        bool offered = false;
+        for (const QJsonValue& value : cli({"status"}).value("findings").toArray()) {
+            const QJsonObject finding = value.toObject();
+            offered |= finding.value("id") == "git.orphaned_worktree"
+                && finding.value("command").toArray() == QJsonArray{"git", "worktree", "remove", idlePath};
+        }
+        check(offered, "status offers the removal as argv a client runs without a shell");
     }
 
     // Synthetic legacy entries check selection independently of one-second IDs.
@@ -529,6 +536,11 @@ void sessionContract(const QString& executable)
         git({"-c", "user.name=R", "-c", "user.email=r@example.invalid", "commit", "--allow-empty", "-m", message});
     };
     commit("initial");
+    // Before the project exists: a repository outside Runmark is left alone.
+    for (const char* event : {"session-start", "stop"}) {
+        check(hook(executable, root, event, R"({"session_id":"s0","cwd":")" + root.toUtf8() + R"("})").isEmpty(), "no output outside a project");
+    }
+    check(!QFileInfo::exists(root + "/.runmark"), "a hook outside a project writes nothing");
     check(QDir().mkpath(root + "/.runmark"), "session state");
     check(writeFile(root + "/plan.md", "- [ ] MF-1\n"), "session plan");
     check(writeFile(root + "/.runmark/project.json", R"({"version":1,"name":"s","worktree_root":"wt","repos":[{"name":"r","path":".","base":{"remote":"origin","branch":"main"}}],"plan":{"paths":["plan.md"]},"task_id_pattern":"MF-\\d+"})"), "session config");

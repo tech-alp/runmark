@@ -167,7 +167,10 @@ Format `project.json` içindeki `task_id_pattern` ile eşleşmezse `rmk status`
      worktree'sinde açılır; ajan prompt'uyla başlar), tüm projeler.
      herdr 0.9.1'de üç pencere canlı açıldı; devam et'in devralma ve ajan
      başlatma yolu yalnız sahte herdr/rmk ile test edildi.
-  4. Çözümü komut olan uyarılar eyleme bağlanır.
+  4. [x] Çözümü komut olan uyarılar eyleme bağlanır: bulgu, komutu `command`
+     argv'si olarak taşır (şimdilik `git.orphaned_worktree`,
+     `context.interrupted_execution`); herdr'da `runmark.herdr.fix` penceresi
+     birini seçtirir, onaydan sonra kabuksuz çalıştırır ve satırı tazeler.
   5. Bir hafta kullanım; Qt desktop kararı.
 
   Kapsam dışı (kullanıcı kararı, 2026-09-27): makineler arası devam. Notlar,

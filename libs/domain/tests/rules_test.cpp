@@ -438,5 +438,37 @@ int main()
         if (!explained) return 1;
     }
 
+    // A one-command action also comes as argv, so a client can run it without
+    // a shell; advice stays text only.
+    {
+        const auto command = [](const QVector<runmark::Finding>& findings, const QString& id) {
+            for (const runmark::Finding& finding : findings) {
+                if (finding.id == id) return finding.command;
+            }
+            return QStringList{};
+        };
+        runmark::StatusFacts f;
+        f.now = now;
+        f.ledger.started = {startedEvent(QStringLiteral("E1"), QStringLiteral("MF-1"), QStringLiteral("2026-09-20T11:00:00Z"))};
+        runmark::ExecutionFinished finished;
+        finished.exec = QStringLiteral("E1");
+        finished.outcome = QStringLiteral("finished");
+        f.ledger.finished = {finished};
+        runmark::ExecutionFacts execution;
+        execution.exec = QStringLiteral("E1");
+        execution.hasHandoff = true;
+        execution.worktreeExists = true;
+        f.executions = {execution};
+        if (command(runmark::evaluate(config(), f), QStringLiteral("git.orphaned_worktree"))
+                != QStringList{QStringLiteral("git"), QStringLiteral("worktree"), QStringLiteral("remove"), QStringLiteral("/w/MF-1")}) return 1;
+        f.ledger.finished[0].outcome = QStringLiteral("interrupted");
+        if (command(runmark::evaluate(config(), f), QStringLiteral("context.interrupted_execution"))
+                != QStringList{QStringLiteral("rmk"), QStringLiteral("start"), QStringLiteral("MF-1")}) return 1;
+        f.repos = {{}};
+        f.repos[0].measured = true;
+        f.repos[0].dirty = true;
+        if (!command(runmark::evaluate(config(), f), QStringLiteral("git.dirty_workspace")).isEmpty()) return 1;
+    }
+
     return 0;
 }

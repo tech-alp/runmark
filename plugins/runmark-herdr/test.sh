@@ -40,7 +40,7 @@ fs.writeFileSync(dir('rmk'), `#!/bin/sh
 case "$*" in
   "status --line") case "$PWD" in '${dir('a')}') echo '3/7 · 1 open' ;; '${dir('b')}') echo '0/2' ;; *) exit 1 ;; esac ;;
   "resume --markdown") echo '# Runmark resume: MF-1' ;;
-  "status") printf '%s' "$OPEN_WORK" ;;
+  "status") printf '%s' "$STATUS_JSON" ;;
   "start MF-1 --agent "*) printf '{"worktree":"%s"}' '${dir('wt')}' ;;
   "--project "*" status --line") echo "line for $2" ;;
   *) exit 1 ;;
@@ -93,19 +93,40 @@ check('the projects popup lists every registered project with its line', () => {
 const openWork = work => JSON.stringify({ open_work: [work] });
 check('continue takes an interrupted task over and starts the agent there', () => {
   const calls = invoke(['pane', 'continue'], {
-    OPEN_WORK: openWork({ task: 'MF-1', exec: 'e1', outcome: 'interrupted', worktree: dir('old') }) }, '1\ncodex\n');
+    STATUS_JSON: openWork({ task: 'MF-1', exec: 'e1', outcome: 'interrupted', worktree: dir('old') }) }, '1\ncodex\n');
   assert.equal(calls[0], `workspace create --cwd ${dir('wt')} --label MF-1 --focus`);
   assert.equal(calls[1], "pane run w9:p1 codex 'Continue MF-1: read the output of rmk resume MF-1 and pick up where it left off.'");
 });
 check('continue resumes a never-finished task in its worktree, claude by default', () => {
   const calls = invoke(['pane', 'continue'], {
-    OPEN_WORK: openWork({ task: 'MF-2', exec: 'e2', outcome: null, worktree: dir('wt') }) }, '1\n\n');
+    STATUS_JSON: openWork({ task: 'MF-2', exec: 'e2', outcome: null, worktree: dir('wt') }) }, '1\n\n');
   assert.equal(calls[0], `workspace create --cwd ${dir('wt')} --label MF-2 --focus`);
   assert.match(calls[1], /^pane run w9:p1 claude 'Continue MF-2/);
 });
 check('continue leaves a missing worktree alone', () => {
   assert.deepEqual(invoke(['pane', 'continue'], {
-    OPEN_WORK: openWork({ task: 'MF-2', exec: 'e2', outcome: null, worktree: dir('gone') }) }, '1\n\n\n'), []);
+    STATUS_JSON: openWork({ task: 'MF-2', exec: 'e2', outcome: null, worktree: dir('gone') }) }, '1\n\n\n'), []);
+});
+const findings = list => ({ STATUS_JSON: JSON.stringify({ findings: list }), HERDR_WORKSPACE_ID: 'w1' });
+const fixable = [
+  { id: 'context.dirty', title: 'Advice only', suggested_action: 'Commit it.' },
+  { id: 'git.orphaned_worktree', title: 'Worktree left behind', command: ['touch', dir('fixed')] },
+];
+check('fix lists only findings with a command, runs the chosen one and refreshes the line', () => {
+  const calls = invoke(['pane', 'fix'], findings(fixable), '1\ny\n\n');
+  assert.doesNotMatch(invoke.stdout, /Advice only/);
+  assert(fs.existsSync(dir('fixed')), 'the command ran');
+  assert.deepEqual(calls, [report('w1', '3/7 · 1 open')]);
+  fs.rmSync(dir('fixed'));
+});
+check('fix runs nothing unless confirmed', () => {
+  assert.deepEqual(invoke(['pane', 'fix'], findings(fixable), '1\n\n'), []);
+  assert(!fs.existsSync(dir('fixed')), 'declined command must not run');
+});
+check('fix runs a command without a shell', () => {
+  invoke(['pane', 'fix'], findings([{ title: 'T', command: ['touch', `${dir('fixed')}; touch ${dir('injected')}`] }]), '1\ny\n\n');
+  assert(!fs.existsSync(dir('injected')), 'argument must not be interpreted');
+  fs.rmSync(`${dir('fixed')}; touch ${dir('injected')}`, { force: true });
 });
 check('manifest: startup and three events run the wrapper', () => {
   const manifest = fs.readFileSync(path.join(plugin, 'herdr-plugin.toml'), 'utf8');

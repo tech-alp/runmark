@@ -178,6 +178,9 @@ int main(int argc, char* argv[])
             runmark::recordNote(configPath, arguments.size() == 2 ? arguments.constLast() : QString(), parser.value(kindOption), parser.value(textOption), parser.value(referenceOption));
             result = {{QStringLiteral("recorded"), QStringLiteral("note")}};
         } else if (arguments.size() == 2 && arguments.constFirst() == QLatin1String("hook")) {
+            // The plugin runs in every agent session. A directory that belongs
+            // to no Runmark project gets no state written and no reminder.
+            if (!QFileInfo::exists(configPath)) return 0;
             return runHook(configPath, arguments.constLast());
         } else {
             return emitError(QStringLiteral("usage"),

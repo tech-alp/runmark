@@ -20,7 +20,7 @@ jobs:
         run: |
           npm --prefix tools/release ci --ignore-scripts
           npm --prefix tools/release test
-          npm --prefix tools/release audit --audit-level=high
+          node tools/release/audit.mjs
       - name: Debug build and tests
         run: |
           cmake --preset dev
