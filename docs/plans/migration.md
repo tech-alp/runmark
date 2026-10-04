@@ -172,6 +172,11 @@ Format `project.json` içindeki `task_id_pattern` ile eşleşmezse `rmk status`
      `context.interrupted_execution`); herdr'da `runmark.herdr.fix` penceresi
      birini seçtirir, onaydan sonra kabuksuz çalıştırır ve satırı tazeler.
   5. Bir hafta kullanım; Qt desktop kararı.
+     İlk hafta (2026-10-04): iki projede de `rmk start` hiç kullanılmadı; iş
+     dal ve PR üzerinden yürüdü. Kaçan olay: üç commit yerel `main`'de kaldı,
+     Codex `origin/main`'den devam etti. `git.local_only_commits` eklendi:
+     hiçbir remote'ta olmayan, değişikliği tabanda da bulunmayan commit'ler
+     dal dal raporlanır ve oturum açılışında en üstte gösterilir.
 
   Kapsam dışı (kullanıcı kararı, 2026-09-27): makineler arası devam. Notlar,
   açık işler, oturumlar ve handoff'lar makineye yerel; yalnız

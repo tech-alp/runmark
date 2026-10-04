@@ -152,6 +152,19 @@ QString sessionNotesMarkdown(const SessionFacts& session, const QVector<NoteReco
     return text;
 }
 
+QString localOnlyMarkdown(const QVector<RepoFacts>& repositories)
+{
+    QString text;
+    for (const RepoFacts& repository : repositories) {
+        for (const LocalOnlyBranch& local : repository.localOnly) {
+            text += QStringLiteral("- %1 `%2`: %3 commit(s)\n").arg(repository.name, local.branch).arg(local.commits);
+        }
+    }
+    if (text.isEmpty()) return {};
+    return QStringLiteral("## Only on this machine\n\nThese commits are on no remote. Work started from the remote base will not "
+        "contain them: tell the user, then push them, open a PR or build on them.\n\n") + text;
+}
+
 QString openWorkMarkdown(const QVector<OpenExecution>& open)
 {
     if (open.isEmpty()) return {};

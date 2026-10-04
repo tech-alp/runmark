@@ -34,6 +34,8 @@ QString sessionWithoutNotesMarkdown(const SessionFacts& session);
 QString sessionNotesMarkdown(const SessionFacts& session, const QVector<NoteRecorded>& notes);
 // Heads the session-start context: executions other than the one resumed that
 // still wait for someone. Empty when there are none.
+// Session-start section for commits on no remote; empty when there are none.
+QString localOnlyMarkdown(const QVector<RepoFacts>& repositories);
 QString openWorkMarkdown(const QVector<OpenExecution>& open);
 
 } // namespace runmark

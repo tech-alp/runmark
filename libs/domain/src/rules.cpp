@@ -219,6 +219,19 @@ QVector<Finding> evaluate(const ProjectConfig& config, const StatusFacts& facts)
                 QStringLiteral("Local base is behind remote"),
                 repository.localBase + QStringLiteral(" is ") + QString::number(repository.localBehind) + QStringLiteral(" commits behind ") + repository.base));
         }
+        // Work nobody else can see: a session starting from the remote base
+        // builds past it, and "behind" alone reads as "pull" (RM-16 week).
+        if (!repository.localOnly.isEmpty()) {
+            QStringList branches;
+            for (const LocalOnlyBranch& local : repository.localOnly) {
+                branches.append(local.branch + QStringLiteral(" (") + QString::number(local.commits) + QStringLiteral(")"));
+            }
+            findings.append(finding(QStringLiteral("git.local_only_commits"), QStringLiteral("warning"), QStringLiteral("git"),
+                QStringLiteral("Commits exist only on this machine"),
+                repository.name + QStringLiteral(": ") + branches.join(QStringLiteral(", "))
+                    + QStringLiteral(" on no remote; a session starting from ") + repository.base + QStringLiteral(" will not see them"),
+                QStringLiteral("Push the branch or open a PR; delete it if the work is abandoned.")));
+        }
     }
 
     // --- Ledger scan ---

@@ -113,6 +113,29 @@ RepoFacts observeRepo(const RepositoryConfig& repository, const QString& reposit
             facts.localBehind = leftRightCount(
                 gitRequired(repositoryPath, {QStringLiteral("rev-list"), QStringLiteral("--left-right"), QStringLiteral("--count"), facts.base + QStringLiteral("...") + facts.localBase}), 0);
         }
+        // Commits on no remote ref live only on this machine: a session that
+        // starts from the remote base never sees them. Measured against the
+        // last fetched remote refs, so it needs no network. A commit whose
+        // change already reached the base under another SHA (cherry-picked,
+        // rebased) is not lost work and does not count.
+        // ponytail: two git calls per branch, only when a local-only commit exists.
+        const QStringList notOnRemote{QStringLiteral("--not"), QStringLiteral("--remotes")};
+        if (gitRequired(repositoryPath, QStringList{QStringLiteral("rev-list"), QStringLiteral("--count"), QStringLiteral("--branches")} + notOnRemote).toInt() > 0) {
+            const QStringList branches = gitRequired(repositoryPath, {QStringLiteral("for-each-ref"), QStringLiteral("--format=%(refname:short)"), QStringLiteral("refs/heads")})
+                .split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+            for (const QString& branch : branches) {
+                const QString ref = QStringLiteral("refs/heads/") + branch;
+                const QStringList local = gitRequired(repositoryPath, QStringList{QStringLiteral("rev-list"), ref} + notOnRemote)
+                    .split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+                if (local.isEmpty()) continue;
+                // `git cherry` marks with "+" each commit whose change the base lacks.
+                int commits = 0;
+                for (const QString& line : gitRequired(repositoryPath, {QStringLiteral("cherry"), facts.base, ref}).split(QLatin1Char('\n'), Qt::SkipEmptyParts)) {
+                    if (line.startsWith(QLatin1Char('+')) && local.contains(line.mid(2))) ++commits;
+                }
+                if (commits > 0) facts.localOnly.append({branch, commits});
+            }
+        }
         facts.measured = true;
     } catch (const std::exception& error) {
         facts.measurementError = QString::fromUtf8(error.what());
